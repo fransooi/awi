@@ -1,0 +1,26 @@
+{
+  "name": "awi-engine",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Francois Lionet",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@api/eden-ai": "file:.api/apis/eden-ai",
+    "axios": "^1.7.7",
+    "child_process": "^1.0.2",
+    "compromise": "^14.14.0",
+    "fs": "^0.0.1-security",
+    "he": "^1.2.0",
+    "hjson": "^3.2.2",
+    "keysender": "^2.3.0",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
+    "readline": "^1.3.0",
+    "sha1": "^1.1.1",
+    "ws": "^8.18.0"
+  }
+}
