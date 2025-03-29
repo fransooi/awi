@@ -50,8 +50,8 @@ class BubbleDigest extends BubbleBase
 			invalid: []
 		}
 		path = path + '/messages';
-		var exist = await this.awi.system.exists( path );
-		if ( exist )
+		var exist = this.awi.system.exists( path );
+		if ( exist.isSuccess() )
 		{
 			var info = await this.messenger( path, basket, control );
 			result.valid.push( ...info.valid );
@@ -273,12 +273,12 @@ class BubbleDigest extends BubbleBase
 			if ( type )
 			{
 				var path = this.awi.configuration.getDataPath() + '/todigest/' + type;
-				var exist = await this.awi.system.exists( path );
+				var exist = this.awi.system.exists( path );
 				if ( !exist.isSuccess() )
 				{
 					type += 's';
 					path = this.awi.configuration.getDataPath() + '/todigest/' + type;
-					exist = await this.awi.system.exists( path );
+					exist = this.awi.system.exists( path );
 				}
 				if ( !exist.isSuccess() )
 				{

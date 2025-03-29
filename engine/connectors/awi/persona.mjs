@@ -143,7 +143,7 @@ export default class ConnectorPersona extends ConnectorBase
 		{
 			var path = self.awi.configuration.getConfigurationPath() + '/' + self.name.toLowerCase() + '-' + type + '-';
 			var memory;
-			var answer = await self.awi.system.exists( path + 'memory.mjs' );
+			var answer = self.awi.system.exists( path + 'memory.mjs' );
 			if ( answer.isSuccess() )
 			{
 				answer = await self.awi.system.readFile( path + 'memory.mjs', { encoding: 'utf8' } );

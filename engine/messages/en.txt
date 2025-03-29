@@ -48,3 +48,12 @@ awi:the-binary-value-is                 The binary value of ~{expression}~ is ~{
 awi:code-wrapper-javascript             try{ ~{code}~ }<BR>catch( e ){ root.onError( e ) }<BR>:iwa
 awi:chat-answer                         ~{value}~
 awi:nothing-to-chat                     Nothing to chat...  
+
+awi:language-changed                    Programming language changed to ~{mode}~
+awi:language-not-found                  Programming language ~{mode}~ not found
+awi:socket-command-not-found            Command ~{command}~ not found
+awi:socket-error-processing-command     Error processing command ~{command}~
+awi:project-exists                      Project ~{value}~ already exists
+awi:project-created                     Project ~{value}~ created successfully
+awi:to-print                            Default to print: ~{value}~
+awi:template-not-found                  Template ~{value}~ not found

@@ -23,22 +23,33 @@ export default class Answer
 	{
         this.parent = parent;
 		this.awi = parent.awi;
-        this.type = type;
-		this.data = data;
+        this.error = null;
+        this.setValue(data, type);
+        if (typeof toPrint == 'undefined')
+            toPrint = '~{value}~';
         this.toPrint = toPrint;
 	}
+    setError( error, errorData )
+    {
+        this.error = error;
+        if ( typeof errorData != 'undefined' )
+            this.setValue( errorData );
+    }
 	reset()
 	{
 		this.data = 0;
         this.type = 'int';
+        this.error = null;
 	}
     isSuccess()
     {
+        if (this.error)
+            return false;
         return true;        
     }
     isError()
     {
-        return false;        
+        return this.error !== null;        
     }
     isNumber()
     {
@@ -48,8 +59,20 @@ export default class Answer
     {
         return this.type == 'string';
     }
-    setValue( value = 0, type = 'int' )
+    setValue( value = 0, type )
     {
+        if ( typeof type == 'undefined' ){
+            if (this.awi.utilities.isArray(value))
+                type = 'array';
+            else if (this.awi.utilities.isObject(value))
+                type = 'object';
+            else if (this.awi.utilities.isString(value))
+                type = 'string';
+            else if (this.awi.utilities.isNumber(value))
+                type = 'number';
+            else
+                type = 'int';
+        }
         this.type = type;
         this.data = value;
     }
@@ -115,12 +138,14 @@ export default class Answer
 	}
     getPrint( format )
     {
+        if ( this.error )
+            return this.awi.messages.getMessage( this.error, { value: this.getString( format ) } );
+        
         var toPrint = this.toPrint;
         if ( !toPrint )
             toPrint = '~{value}~'
         else if ( typeof toPrint == 'function' )
             return toPrint( this, format );
-
         return this.awi.messages.getMessage( toPrint, { value: this.getString( format ) } );
     }
 }

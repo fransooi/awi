@@ -138,8 +138,9 @@ class ConnectorPrompt extends ConnectorBase
                 answer = await this.awi.callConnectors( [ 'computeResponse', '*', { response: answer.response } ], basket, control );
                 if ( answer.isSuccess() )
                 {
-                    response = answer.response;
-                    control.editor.print( answer.response.split( '\n' ), { user: 'awi', newLine: true, prompt: false } );
+                    var response = answer.data.response;
+					if ( response )
+                    	control.editor.print( answer.response.split( '\n' ), { user: 'awi', newLine: true, prompt: false } );
                 }
             }    
 		}

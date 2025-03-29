@@ -19,6 +19,8 @@
 *        to receive / send prompts.
 */
 import ConnectorBase from '../../connector.mjs'
+import Base from '../../base.mjs'
+import { SERVERCOMMANDS } from '../../servercommands.js'
 import { WebSocketServer } from 'ws'
 export { ConnectorWebSocketEditor as Connector }
 
@@ -59,7 +61,7 @@ class ConnectorWebSocketEditor extends ConnectorBase
 							message = JSON.parse( json );
 						}
 
-						if ( message.command == 'connect' )
+						if ( message.command == SERVERCOMMANDS.CONNECT )
 						{
 							self.user_connect( connection, message );
 						}
@@ -74,7 +76,6 @@ class ConnectorWebSocketEditor extends ConnectorBase
 					function( reasonCode, description )
 					{
 						console.log( 'User disconnected.' );
-						self.close( null, { connection: connection } );
 					} );
 
 			} );
@@ -83,49 +84,65 @@ class ConnectorWebSocketEditor extends ConnectorBase
 	}
 	async user_connect( connection, message )
 	{
-		var handle = this.awi.utilities.getUniqueIdentifier( this.editors, message.data.key.substring( 0, 5 ), 0 );
+		//var handle = this.awi.utilities.getUniqueIdentifier( this.editors, message.data.key.substring( 0, 5 ), 0 );
+        var handle = this.awi.utilities.getUniqueIdentifier( this.editors, 'toto', 0 );
         var editor = new EditorWebSocket( this.awi, { 
 			handle: handle,
 			lastMessage: message,
-			connection: connection
+			connection: connection,
+			parent: this,
+            userName: message.parameters.userName,
+            userKey: message.parameters.userKey
         } );
         this.editors[ handle ] = editor;
         this.current = editor;
+        await editor.connect({});
 	}
 }
-class EditorWebSocket
+class EditorWebSocket extends Base
 {
 	constructor( awi, config = {} )
 	{
-		this.awi = awi;
+		super( awi, config );
 		this.className = 'EditorWebSocket';
         this.handle = config.handle;
+        this.parent = config.parent;
+        this.version = this.parent.version;
         this.connection = config.connection;
         this.lastMessage = config.lastMessage;
         this.lastMessage.handle = this.handle;
+        this.userName = config.userName;
+        this.userKey = config.userKey;
+
         this.lastLine = '';
-        this.handle = config.handle;
         this.inputEnabled = true;
         this.reroute = undefined;
         this.basket = {};
         this.toSend = [];
         this.toSendClean = [];
         this.callbacks = {};
-        setTimeout( async function()
-        {
-            self.reply( { 
-                parameters: { 
-                    userList: self.awi.configuration.getUserList() 
-                } } );
-        }, 500 )
+        
+        // Find all languages available in this server
+        this.languageMode='';
+        this.projectConnectors=[];
+        this.projectConnector=null;
 	}
-    reply( parameters )
+    async connect(options)
+    {
+        var answer = await this.awi.callConnectors( [ 'isProjectConnector', 'project', { } ] );
+        if ( answer.isSuccess() )
+            this.projectConnectors=answer.data;
+        this.awi.editor.current.print( 'User connected, name: ' + this.userName + ', key: ' + this.userKey + ', handle: ' + this.handle, { user: 'user' } );
+        this.reply( { handle: this.handle, user: this.userName } );
+        return true;
+    }
+    reply( parameters, lastMessage=null  )
 	{
         var message = {
-            handle: this.lastMessage.handle,
-            responseTo: this.lastMessage.command,            
-            callbackId: this.lastMessage.callbackId,
-            messageId: this.lastMessage.messageId,
+            handle: lastMessage ? lastMessage.handle : this.lastMessage.handle,
+            responseTo: lastMessage ? lastMessage.command : this.lastMessage.command,            
+            callbackId: lastMessage ? lastMessage.id : this.lastMessage.id,
+            id: this.awi.utilities.getUniqueIdentifier( {}, 'message', 0 ),
             parameters: parameters
         };
 		this.connection.send( JSON.stringify( message ) );
@@ -136,7 +153,7 @@ class EditorWebSocket
             handle: this.handle,
             command: command, 
             parameters: parameters,
-            messageId: this.awi.utilities.getUniqueIdentifier( {}, 'message', 0 )
+            id: this.awi.utilities.getUniqueIdentifier( {}, 'message', 0 )
         };
         if ( callback )
         {
@@ -158,35 +175,48 @@ class EditorWebSocket
                 return;
             }
         }
-        var parameters = { error: 'awi:command-not-found' };
-        var func = this[ 'command_' + message.command ]( message );
-        if ( func )
+        var errorParameters = { error: 'awi:socket-command-not-found' };
+        try
         {
-            try
+            var text = 'User: ' + this.userName + ' command: ' + message.command;
+            var parameters = '';
+            for ( var key in message.parameters )
+                parameters += key + ': ' + message.parameters[ key ] + ', \n';
+            if ( parameters )
+                text += '\n' + parameters;
+            var func = null;
+            if ( this[ 'command_' + message.command ] )
+                func = this[ 'command_' + message.command ];
+            else if (this.projectConnector)
+                func = this.projectConnector[ 'command_' + message.command ];
+            if ( func )
             {
-                func( message );
-                return;
-            } 
-            catch( e ) 
-            { 
-                parameters.error = 'awi:error-processing-command';
-                parameters.catchedError = e;
+                this.awi.editor.current.print( text, { user: 'awi' } );
+                return func.apply( this, [ message.parameters ] );
             }
+        } 
+        catch( e ) 
+        { 
+            errorParameters.error = 'awi:socket-error-processing-command';
+            errorParameters.catchedError = e;
         }
+        var text = this.awi.messages.getMessage( errorParameters, { command: message.command } );
+        this.awi.editor.current.print( text, { user: 'awi' } );
+        this.reply( errorParameters );
     }
-	async command_prompt( message )
+	async command_prompt( parameters )
 	{
         var answer;
 		this.toSend = [];
 		this.toSendClean = [];
 		
         var userName = this.awi.config.getConfig( 'user' ).firstName;        
-		console.log( '.<' + userName + '<: ' + message.data.prompt );
+		console.log( '.<' + userName + '<: ' + parameters.prompt );
         var basket = this.awi.configuration.getBasket( 'user' );
 		if ( this.inputEnabled )
 		{
 			if ( this.reroute )
-				answer = await this.reroute( message.data.prompt, basket, { editor: editor } );
+				answer = await this.reroute( parameters.prompt, basket, { editor: editor } );
 			else
 				answer = await this.awi.prompt.prompt( message.data.prompt,basket, { editor: editor } );
             this.awi.configuration.setBasket( 'user', answer.getValue() );
@@ -209,6 +239,40 @@ class EditorWebSocket
 			}
 		}
 	}
+    async command_newProject( parameters )
+    {
+        var answer = await this.command_setMode( parameters );
+        if (answer.isError()){
+            this.reply( { error: answer.error } );
+            return;
+        }
+        var answer = await this.projectConnector.command_newProject( parameters );
+        if (answer.isError()){
+            this.reply( { error: answer.error } );
+            return;
+        }
+        this.reply( answer.data );
+    }
+    async command_setMode( parameters )
+    {
+        if ( parameters.mode != this.languageMode )
+        {            
+            for( var l in this.projectConnectors )
+            {
+                if ( l == parameters.mode )
+                {
+                    this.languageMode = parameters.mode;
+                    this.projectConnector = this.projectConnectors[l].self;
+                    this.projectConnector.setEditor( this );
+                    this.awi.editor.current.print( this.awi.messages.getMessage( 'awi:language-changed', { mode: parameters.mode } ), { user: 'awi' } );
+                    return this.newAnswer( true );
+                }
+            }
+            this.awi.editor.current.print( this.awi.messages.getMessage( 'awi:language-not-found', { mode: message.parameters.mode } ), { user: 'system' } );
+            return this.newError( 'awi:language-not-found' );
+        }
+        return this.newAnswer( true );
+    }
 	print( text, options = {} )
 	{
 		options.user = typeof options.user == 'undefined' ? 'awi' : options.user;

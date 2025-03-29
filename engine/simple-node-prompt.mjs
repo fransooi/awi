@@ -57,6 +57,7 @@ function getArguments()
             { name: 'souvenirs/awi/*', config: {}, options: {} },
             { name: 'memories/awi/*', config: {}, options: {} },
             { name: 'connectors/language/javascript', config: { priority: 98 }, options: {} },
+            { name: 'connectors/project/phaser', config: { priority: 98 }, options: {} },
             { name: 'connectors/awi/parser', config: { priority: 97 }, options: {} },
             { name: 'connectors/awi/persona', config: { priority: 96 }, options: {} },
             { name: 'connectors/awi/prompt', config: { priority: 95 }, options: {} },

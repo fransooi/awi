@@ -88,14 +88,15 @@ class ConnectorNode extends ConnectorBase
 	}
 	async copyFile( sourcePath, destinationPath, options )
 	{
-        path = this.normalize( path );
+        var sPath = this.normalize( sourcePath );
+        var dPath = this.normalize( destinationPath );
 		try
 		{
-			return this.newAnswer( FS.copyFileSync( sourcePath, destinationPath, options ) );
+			return this.newAnswer( FS.copyFileSync( sPath, dPath, options ) );
 		}
 		catch
 		{
-			return this.newError( 'awi:cannot-copy-file' );
+			return this.newError( 'awi:cannot-copy-file', sourcePath );
 		}
 	}
 	async readdir( path )
@@ -146,10 +147,12 @@ class ConnectorNode extends ConnectorBase
 			return this.newError( 'awi:file-not-found' );
 		}
 	}
-	async exists( path )
+	exists( path )
 	{
         path = this.normalize( path );
-		return this.newAnswer( FS.existsSync( path ), 'boolean' );
+		if ( FS.existsSync( path ) )
+			return this.newAnswer( true );
+		return this.newError( 'awi:file-not-found', path );
 	}
 	basename( path, suffix )
 	{
@@ -243,7 +246,7 @@ class ConnectorNode extends ConnectorBase
 				{
 					for ( var l = 0; l < 26; l++ )
 					{
-						var answer = await this.exists( String.fromCharCode( 65 + l ) + ':' );
+						var answer = this.exists( String.fromCharCode( 65 + l ) + ':' );
 						if ( answer.isSuccess() )
 							list.push( String.fromCharCode( 65 + l ) );
 					}

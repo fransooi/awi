@@ -146,6 +146,14 @@ class ConnectorUtilities extends ConnectorBase
 		}
 		return arrDest;
 	}
+	isNumber( item )
+	{
+		return typeof item == 'number';
+	};
+	isString( item )
+	{
+		return typeof item == 'string';
+	};
 	isFunction( functionToCheck )
 	{
 		return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';

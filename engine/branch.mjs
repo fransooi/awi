@@ -110,7 +110,7 @@ export default class BranchBase extends BubbleBase
     {
         var answer = await this.getExpressionAnswer( argsIn, basket, control );
         if ( answer.isError() )
-            control.editor.print( answer.getError(), { user: 'awi' } );
+            control.editor.print( answer.getPrint(), { user: 'awi' } );
         else if ( control.promptOn > 0 )
         {
             var text = answer.getPrint();
@@ -137,7 +137,7 @@ export default class BranchBase extends BubbleBase
                         argsOut[ p ] = await self.getExpression( [ token.parameters[ p ], '', args ], basket, control );
                     var answer = await token.bubble.play( argsOut, basket, control );
                     if ( answer.isError() )
-                        return { type: 'error', data: answer.getError() };
+                        return { type: 'error', data: answer.getPrint() };
                     if ( token.bubble.properties.outputs.length > 0 ) 
                     {
                         var value = answer.getValue();

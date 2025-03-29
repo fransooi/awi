@@ -17,6 +17,7 @@
 * @short Filesystem functions
 */
 import ConnectorBase from '../../connector.mjs'
+import { mkdirp } from 'mkdirp'
 export { ConnectorFiles as Connector }
 
 class ConnectorFiles extends ConnectorBase
@@ -82,7 +83,7 @@ class ConnectorFiles extends ConnectorBase
 		{
 			var name = base + '_' + Math.floor( Math.random() * 100000 ) + '.' + extension;
 			var path = this.tempDirectoryPath + '/' + name;
-			var answer = await this.awi.system.exists( path );
+			var answer = this.awi.system.exists( path );
 			if ( !answer.isSuccess() )
 				return this.newAnswer( path, 'string' );
 		}
@@ -91,7 +92,7 @@ class ConnectorFiles extends ConnectorBase
 	async loadIfExist( path, options )
 	{
         var self = this;
-		var answer = await this.awi.system.exists( path );
+		var answer = this.awi.system.exists( path );
 		if ( answer.isSuccess() )
 		{
 			if ( options.encoding == 'utf8' )
@@ -133,6 +134,7 @@ class ConnectorFiles extends ConnectorBase
 	async getDirectory( path, options )
 	{
 		var self = this;
+		var relativePath = '';
 		async function getDir( path, options, parent )
 		{
 			var result = [];
@@ -145,6 +147,10 @@ class ConnectorFiles extends ConnectorBase
 				for ( var f = 0; f < files.length; f++ )
 				{
 					var sPath = path + '/' + files[ f ];
+					var saveRelativePath = relativePath;
+					if ( relativePath.length > 0 )
+						relativePath += '/';	
+					relativePath += files[ f ];
 					var answer2 = await self.awi.system.stat( sPath );
 					if ( answer2.isSuccess() )
 					{
@@ -155,15 +161,16 @@ class ConnectorFiles extends ConnectorBase
 							{
 								if ( !options.filters || ( options.filters && self.filterFilename( sPath, options.filters ) ) )
 								{
-									result.push(
-									{
+									var response = {
 										name: files[ f ],
 										path: sPath,
+										relativePath: relativePath,
 										isDirectory: false,
 										size: stats.size,
-										stats: stats,
-										parent: parent
-									} );
+									}
+									if ( !options.noStats )
+										response.stats = stats;
+									result.push( response ); 
 								}
 							}
 						}
@@ -175,9 +182,9 @@ class ConnectorFiles extends ConnectorBase
 								{
 									name: files[ f ],
 									path: sPath,
+									relativePath: relativePath,
 									isDirectory: true,
 									files: null,
-									parent: parent
 								};
 								var newResult = await getDir( sPath, options, newFile );
 								if ( !options.onlyFiles )
@@ -196,14 +203,15 @@ class ConnectorFiles extends ConnectorBase
 									{
 										name: files[ f ],
 										path: sPath,
+										relativePath: relativePath,
 										isDirectory: true,
-										files: [],
-										parent: parent
+										files: []
 									} );
 								}
 							}
 						}
 					}
+					relativePath = saveRelativePath;
 				}
 			}
 			return result;
@@ -331,15 +339,15 @@ class ConnectorFiles extends ConnectorBase
 	}
 	async deleteDirectory( destinationPath, options, tree, count )
 	{
-        debugger;
+		var answer;
 		try
 		{
 			if ( !tree )
 			{
-				var answer = await this.awi.system.exists( destinationPath );
+				answer = this.awi.system.exists( destinationPath );
 				if ( answer.isSuccess() )
 				{
-					answer = await this.getDirectory( destinationPath, options );
+					answer = await this.getDirectory( destinationPath, { filters: '*.*', recursive: options.recursive } );
                     if ( answer.isSuccess() )
                         tree = answer.getValue();
 					else
@@ -351,25 +359,59 @@ class ConnectorFiles extends ConnectorBase
 			{
 				var file = tree[ f ];
 				if ( !file.isDirectory )
-					await this.awi.system.unlink( file.path );
+				{
+					answer = await this.awi.system.unlink( file.path );
+					if ( !answer.isSuccess() )
+						return answer;
+				}
 				else
 				{
 					if ( options.recursive )
 					{
 						count++;
-						await this.deleteDirectory( file.path, options, file.files, count );
+						answer = await this.deleteDirectory( file.path, options, file.files, count );
+						if ( !answer.isSuccess() )
+							return answer;
 						count--;
 					}
 				}
 			}
 			if ( count > 0 || !options.keepRoot )
-				await this.awi.system.rmdir( destinationPath );
-			return this.newAnswer();
+			{
+				answer = await this.awi.system.rmdir( destinationPath );
+				if ( !answer.isSuccess() )
+					return answer;
+			}
+			return this.newAnswer( true );
 		}
 		catch( error )
 		{
 		}
-		return this.newError( 'awi:cannot-delete-directory' );
+		return this.newError( 'awi:cannot-delete-directory', destinationPath );
+	}
+	async copyDirectory( sourcePath, destinationPath, options )
+	{
+		var answer = await this.getDirectory( sourcePath, { recursive: true, filters: '*.*', listDirectories: true, listFiles: true, sorted: true } );
+		if ( answer.isError() )
+			return answer;
+		var files = answer.getValue();
+		for ( var f = 0; f < files.length; f++ )
+		{
+			var file = files[ f ];
+			if ( file.isDirectory )
+			{
+				answer = await this.awi.files.createDirectories( destinationPath + '/' + file.relativePath );
+				if ( answer.isError() )
+					return answer;
+			}
+			else
+			{
+				answer = await this.awi.system.copyFile( file.path, destinationPath + '/' + file.relativePath );
+				if ( answer.isError() )
+					return answer;
+			}
+		}
+		return this.newAnswer( true );
 	}
 	getFilesFromTree( tree = [], result = [] )
 	{
@@ -437,11 +479,15 @@ class ConnectorFiles extends ConnectorBase
 		}
 		return result;
 	}
-	async statsIfExists( path )
+	exists( path )
 	{
-		var answer = await this.awi.system.exists( path );
+		return this.awi.system.exists( path );
+	}
+	statsIfExists( path )
+	{
+		var answer = this.awi.system.exists( path );
 		if ( answer.isSuccess() )
-			return await this.awi.system.stat( path );
+			return this.awi.system.stat( path );
 		return this.newError( 'awi:file-not-found' );
 	}
 	async loadHJSON( path )
@@ -483,6 +529,18 @@ class ConnectorFiles extends ConnectorBase
 	{
 		var json = JSON.stringify( data );
 		return await this.awi.system.writeFile( path, json, { encoding: 'utf8' } );
+	}
+	createDirectories( path )
+	{
+		try
+		{
+			mkdirp.sync( this.awi.system.normalize( path ) );
+			return this.newAnswer( path );
+		}
+		catch( e )
+		{	
+			return this.newError( 'awi:file-not-found' );
+		}
 	}
 	removeBasePath( path, directories )
 	{

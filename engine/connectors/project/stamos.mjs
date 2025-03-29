@@ -19,7 +19,7 @@
 *
 */
 import ConnectorBase from '../../connector.mjs'
-import Compiler from './stamos/compiler.mjs'
+import Compiler from '../language/stamos/compiler.mjs'
 export { ConnectorStamos as Connector }
 
 class ConnectorStamos extends ConnectorBase
@@ -56,5 +56,9 @@ class ConnectorStamos extends ConnectorBase
         var { sources, options } = this.awi.getArgs( [ 'sources', 'options' ], args, basket, [ [], {} ] );
         var result = await this.compiler.compile( sources, options );
         return this.newAnswer( result );
+    }
+    async isLanguageConnector(args, basket, control)
+    {
+        return this.newAnswer( { stamos: { version: '0.5', self: this } }, 'object' );
     }
 }

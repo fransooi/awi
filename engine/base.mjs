@@ -28,17 +28,14 @@ export default class Base
 		this.className = '***UNDEFINED***';
         this.group = '***UNDEFINED***';
 	}
-    newAnswer( value = 0, type = 'int', toPrint = '' )
+    newAnswer( value = 0, type, toPrint )
     {
         return new Answer( this, value, type, toPrint );
     }
-    newError( error = 'awi:error', value = 0, type= 'int' )
+    newError( error = 'awi:error', value, type )
     {
         var answer = new Answer( this, value, type, 'awi:error-base' );
-        answer.error = error;
-        answer.isError = function() { return true };
-        answer.isSuccess = function() { return false };
-        answer.getError = function() { return this.error };
+        answer.setError( error );
         return answer;
     }
 }

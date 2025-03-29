@@ -44,32 +44,6 @@ class ConnectorJavascript extends ConnectorBase
             return this.tokeniseExpression( { prompt: prompt, tokens: tokens, position: 0 } );
         return this.newError( 'awi:nothing-to-prompt' );
     }
-    /*
-            if ( info.delimiter == '{' )
-            {
-                // Javascript
-                var start = info.position;
-                var count = 1;
-                this.awi.utilities.extractNextParameter( info, [ '{', '}' ] );
-                while( !info.eol )
-                {
-                    if ( info.delimiter == '{' )
-                        count++;
-                    else if ( info.delimiter == '}' )
-                    {
-                        count--;
-                        if ( count == 0 )
-                            break;
-                    }
-                    this.awi.utilities.extractNextParameter( info, [ '{', '}' ] );
-                }
-                if ( info.eol || count != 0 )
-                    break;
-                var javascript = info.substring( start, info.position - 1 );
-                var code = this.awi.getMessage( 'awi:code-wrapper-javascript', { code: javascript } );
-                info.tokens.push( { type: 'javascript', code: code } );
-            }    
-    */
     tokeniseExpression( info )
     {
         var skip = false;
