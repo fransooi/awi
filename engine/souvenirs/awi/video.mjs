@@ -58,7 +58,7 @@ class SouvenirVideo extends SouvenirBase
 	{
 		control.editor.print( 'Start: ' + this.parameters.start.text + ', end: ' + this.parameters.end.text, { user: 'memory3' } );
 		control.editor.print( '------------------------------------------------------------', { user: 'memory3' } );
-		return this.newAnswer( this.parameters, 'data' );
+		return this.newAnswer( this.parameters );
 	}
 	async findSouvenirs( args, basket, control )
 	{

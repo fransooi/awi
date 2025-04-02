@@ -48,7 +48,7 @@ class BubbleDebug extends BubbleBase
         var debug = Math.floor( args.level.result );
         if ( debug != oldDebug )
             this.awi.configuration.setDebug( debug );
-		return this.newAnswer( debug, 'int', 'awi:debug-set' );
+		return this.newAnswer( debug, 'awi:debug-set' );
 	}
 	async playback( args, basket, control )
 	{

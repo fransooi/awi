@@ -52,7 +52,7 @@ class SouvenirMail extends SouvenirBase
 		if ( info.result > 0 )
 		{
 			var content = await this.getContent( args, basket, control );
-			return this.newAnswer( { result: info.result, match: info, content: content.basket.mailInfo }, 'data' );
+			return this.newAnswer( { result: info.result, match: info, content: content.basket.mailInfo } );
 		}
 		return this.newError( 'awi:not-found' );
 	}
@@ -65,7 +65,7 @@ class SouvenirMail extends SouvenirBase
             path: path,
             text: text,
             date: this.awi.utilities.getTimestampFromStats( stats )
-    	}, 'data' );
+    	} );
 	}
 	async findSouvenirs( args, basket, control )
 	{

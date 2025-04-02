@@ -46,7 +46,7 @@ class BubbleBin extends BubbleBase
 	async play( args, basket, control )
 	{
 		await super.play( args, basket, control );
-		return this.newAnswer( args.expression.result, 'bin', 'awi:the-binary-value-is' );
+		return this.newAnswer( args.expression.result, 'awi:the-binary-value-is' );
 	}
 	async playback( args, basket, control )
 	{

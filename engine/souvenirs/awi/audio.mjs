@@ -50,7 +50,7 @@ class SouvenirAudio extends SouvenirBase
 		control.editor.print( 'Text: ' + this.text, { user: 'memory3' } );
 		control.editor.print( 'Start: ' + this.start.text + ', end: ' + this.end.text, { user: 'memory3' } );
 		control.editor.print( '---------------------------------------------', { user: 'memory3' } );
-		return this.newAnswer( this.parameters, 'data' );
+		return this.newAnswer( this.parameters );
 	}
 	async extractContent( args, basket, control )
 	{
@@ -58,7 +58,7 @@ class SouvenirAudio extends SouvenirBase
 		if ( info.result > 0 )
 		{
 			var content = await this.getContent( args, basket, control );
-			return this.newAnswer( { result: info.result, match: info, content: content.basket.audioInfo }, 'data' );
+			return this.newAnswer( { result: info.result, match: info, content: content.basket.audioInfo } );
 		}
 		return this.newError( 'awi:not-found' );
 	}

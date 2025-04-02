@@ -42,7 +42,7 @@ class BubbleChat extends BubbleBase
 
         var { question } = this.awi.getArgs( [ 'question' ], args, basket, control );
         if ( question )            
-            return await this.awi.chat.send( [ question.value ], basket, control );
+            return await this.awi.chat.send( [ question.getValue() ], basket, control );
  		return this.newError( 'awi:nothing-to-ask');
 	}
 	async playback( args, basket, control )

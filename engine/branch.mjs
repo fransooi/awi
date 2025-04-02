@@ -108,7 +108,7 @@ export default class BranchBase extends BubbleBase
 	}
     async runTokens( argsIn, basket, control )
     {
-        var answer = await this.getExpressionAnswer( argsIn, basket, control );
+        var answer = await this.getExpression( argsIn, basket, control );
         if ( answer.isError() )
             control.editor.print( answer.getPrint(), { user: 'awi' } );
         else if ( control.promptOn > 0 )
@@ -118,10 +118,6 @@ export default class BranchBase extends BubbleBase
                 control.editor.print( text, { user: 'awi' } );
         }            
         return answer;
-    }
-    async getExpressionAnswer( argsIn, basket, control )
-    {
-        return this.newAnswer( await this.getExpression( argsIn, basket, control ), 'result' );
     }
     async getExpression( argsIn, basket, control )
     {
@@ -137,14 +133,14 @@ export default class BranchBase extends BubbleBase
                         argsOut[ p ] = await self.getExpression( [ token.parameters[ p ], '', args ], basket, control );
                     var answer = await token.bubble.play( argsOut, basket, control );
                     if ( answer.isError() )
-                        return { type: 'error', data: answer.getPrint() };
+                        return answer;
                     if ( token.bubble.properties.outputs.length > 0 ) 
                     {
                         var value = answer.getValue();
                         control.editor.print( [ "Bubble returned: " + value ], { user: 'bubble' } );
                         basket[ token.bubble.properties.outputs[ 0 ].name ] = value;
                         args[ token.bubble.properties.outputs[ 0 ].name ] = value;
-                        return { type: token.bubble.properties.outputs[ 0 ].type, data: value };
+                        return answer;
                     }
                 case 'open':
                     return await self.getExpression( [ token.tokens, args ], basket, control );
@@ -153,13 +149,9 @@ export default class BranchBase extends BubbleBase
                 case 'string':
                 case 'number':
                 case 'object':
-                    return token;
-                case 'plus':
-                case 'minus':
-                case 'mult':
-                case 'div':
-                case 'equal':
-                    return { type: 'operator', data: token.type };
+                    return self.newAnswer( token.value );
+                case 'operator':
+                    return self.newAnswer( token.value, '', 'operator' );
 
                 default:
                     break;
@@ -175,12 +167,12 @@ export default class BranchBase extends BubbleBase
         if ( position < tokens.length )
         {
             var result = await getValue( tokens[ position++ ] );
-            if ( result.type == 'error' )
+            if ( result.isError() )
                 return result;
             while( position < tokens.length && !quit )
             {
                 operator = await getValue( tokens[ position++ ] );
-                if ( operator.type != 'operator' )
+                if ( operator.type != 'operator' || operator.data == 'comma' )
                     break;
                 if ( position >= tokens.length )
                     break;

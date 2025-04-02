@@ -18,6 +18,7 @@
 */
 import ConnectorBase from '../../connector.mjs'
 import { mkdirp } from 'mkdirp'
+import { Buffer } from 'node:buffer';
 export { ConnectorFiles as Connector }
 
 class ConnectorFiles extends ConnectorBase
@@ -85,7 +86,7 @@ class ConnectorFiles extends ConnectorBase
 			var path = this.tempDirectoryPath + '/' + name;
 			var answer = this.awi.system.exists( path );
 			if ( !answer.isSuccess() )
-				return this.newAnswer( path, 'string' );
+				return this.newAnswer( path );
 		}
         return this.newError( 'awi:file-error' );
 	}
@@ -163,13 +164,14 @@ class ConnectorFiles extends ConnectorBase
 								{
 									var response = {
 										name: files[ f ],
-										path: sPath,
 										relativePath: relativePath,
 										isDirectory: false,
 										size: stats.size,
 									}
 									if ( !options.noStats )
 										response.stats = stats;
+									if ( !options.noPaths )
+										response.path = sPath;
 									result.push( response ); 
 								}
 							}
@@ -181,11 +183,12 @@ class ConnectorFiles extends ConnectorBase
 								var newFile =
 								{
 									name: files[ f ],
-									path: sPath,
 									relativePath: relativePath,
 									isDirectory: true,
 									files: null,
 								};
+								if ( !options.noPaths )
+									newFile.path = sPath;
 								var newResult = await getDir( sPath, options, newFile );
 								if ( !options.onlyFiles )
 								{
@@ -199,14 +202,16 @@ class ConnectorFiles extends ConnectorBase
 							{
 								if ( !options.onlyFiles )
 								{
-									result.push(
+									var response =
 									{
 										name: files[ f ],
-										path: sPath,
 										relativePath: relativePath,
 										isDirectory: true,
 										files: []
-									} );
+									};
+									if ( !options.noPaths )
+										response.path = sPath;
+									result.push( response ); 
 								}
 							}
 						}
@@ -226,9 +231,9 @@ class ConnectorFiles extends ConnectorBase
                     list = this.getDirectoryArrayFromTree( tree, { sorted: options.sorted } );
                 if ( options.listFiles )
                     list = list.concat( this.getFileArrayFromTree( tree, { sorted: options.sorted } ) );
-                return this.newAnswer( list, 'array' );
+                return this.newAnswer( list );
             }
-            return this.newAnswer( tree, 'array' );
+            return this.newAnswer( tree );
         }
 		return this.newError( 'awi:directory-not-found' );
 	}
@@ -517,7 +522,7 @@ class ConnectorFiles extends ConnectorBase
 		{
 			var answer = await this.loadFile( path, { encoding: 'utf8' } );
 			if ( answer.isSuccess() )
-				return this.newAnswer( JSON.parse( answer.data ), 'object' );
+				return this.newAnswer( JSON.parse( answer.data ) );
 			return answer;
 		}
 		catch( e )
@@ -529,6 +534,28 @@ class ConnectorFiles extends ConnectorBase
 	{
 		var json = JSON.stringify( data );
 		return await this.awi.system.writeFile( path, json, { encoding: 'utf8' } );
+	}
+	async loadBinary( path )
+	{		
+		var answer = await this.awi.system.readFile( path, { encoding: 'binary' } );
+		if ( !answer.isSuccess() )
+			return answer;
+		// Convert buffer to data
+		return this.newAnswer( Buffer.from( answer.data ).toString( 'base64' ) );
+	}
+	async saveBinary( path, data 	)
+	{
+		// Convert data to buffer
+		var buffer = Buffer.from( data, 'base64' );
+		return await this.awi.system.writeFile( path, buffer, { encoding: 'binary' } );
+	}
+	async saveText( path, data )
+	{
+		return await this.awi.system.writeFile( path, data, { encoding: 'utf8' } );
+	}
+	async delete( path )
+	{
+		return await this.awi.system.unlink( path );
 	}
 	createDirectories( path )
 	{

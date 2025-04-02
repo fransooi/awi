@@ -46,7 +46,7 @@ class BubbleHex extends BubbleBase
 	async play( args, basket, control )
 	{
 		await super.play( args, basket, control );
-		return this.newAnswer( args.expression.result, 'number', 'awi:the-hexadecimal-value-is' );
+		return this.newAnswer( args.expression.result, 'awi:the-hexadecimal-value-is' );
 	}
 	async playback( args, basket, control )
 	{

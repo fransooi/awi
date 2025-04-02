@@ -44,7 +44,7 @@ class BubbleEval extends BubbleBase
 	async play( args, basket, control )
 	{
 		await super.play( args, basket, control );
-		return this.newAnswer( args.expression.result, 'number', 'awi:the-result-is' );
+		return this.newAnswer( args.expression.result, 'awi:the-result-is' );
 	}
 	async playback( args, basket, control )
 	{

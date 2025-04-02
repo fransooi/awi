@@ -97,8 +97,20 @@ class ConnectorConfiguration extends ConnectorBase
 			if ( type == '' )
 				type = 'user-default';
 		}
-		return this.baskets[ type ];
+		if ( this.baskets[ type ] )
+			return this.baskets[ type ];
+		return {};
 	}
+    setBasket( type, basket )
+    {
+        if ( type == 'user' )
+        {
+            type = this.user;
+            if ( type == '' )
+                type = 'user-default';
+        }
+        this.baskets[ type ] = basket;
+    }
     getConfigValue( type, name, defaultValue )
     {
         var config = this.getConfig( type );
@@ -124,7 +136,7 @@ class ConnectorConfiguration extends ConnectorBase
         var toolConfig = config.tools[ toolGroup + '-' + toolName ];
         if ( !toolConfig )
             return this.newError( 'awi:tool-config-not-found' );
-        return this.newAnswer( toolConfig, 'object' );
+        return this.newAnswer( toolConfig );
     }
     async createToolConfiguration( toolGroup, toolName, configuration )
     {
@@ -132,7 +144,7 @@ class ConnectorConfiguration extends ConnectorBase
             return this.newError( 'awi:user-not-connected' );
         var config = this.getConfig( 'user' );
         config.tools[ toolGroup + '-' + toolName ] = configuration;
-        return this.newAnswer( configuration, 'object' );
+        return this.newAnswer( configuration );
     }
 	getNewUserConfig()
 	{
@@ -195,7 +207,7 @@ class ConnectorConfiguration extends ConnectorBase
 				await this.awi.files.saveJSON( this.getConfigurationPath() + '/' + type + '.json', this.configs[ type ] );
 			}
 		}
-		return this.newAnswer( true, 'boolean' );
+		return this.newAnswer( true );
 	}
 	async loadConfigs()
 	{
@@ -598,6 +610,6 @@ class ConnectorConfiguration extends ConnectorBase
             configuration: { 
                 config: this.getConfig( userName ), 
                 name: userName, 
-                persona: await this.loadConfig( 'persona-' + persona ) } }, 'object' );
+                persona: await this.loadConfig( 'persona-' + persona ) } } );
 	}
 }

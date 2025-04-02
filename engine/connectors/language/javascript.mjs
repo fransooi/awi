@@ -163,23 +163,23 @@ class ConnectorJavascript extends ConnectorBase
                     toCut = info.position;
                     break;
                 case '+':
-                    info.tokens.push( { type: 'plus' } );
+                    info.tokens.push( { value: 'plus', type: 'operator' } );
                     toCut = info.position;
-                    break;
+                    break;        
                 case '-':
-                    info.tokens.push( { type: 'minus' } );
+                    info.tokens.push( { value: 'minus', type: 'operator' } );
                     toCut = info.position;
                     break;
                 case '*':
-                    info.tokens.push( { type: 'mult' } );
+                    info.tokens.push( { value: 'mult', type: 'operator' } );
                     toCut = info.position;
                     break;
                 case '/':
-                    info.tokens.push( { type: 'div' } );
+                    info.tokens.push( { value: 'div', type: 'operator' } );
                     toCut = info.position;
                     break;
                 case '=':
-                    info.tokens.push( { type: 'equal' } );
+                    info.tokens.push( { value: 'equal', type: 'operator' } );
                     toCut = info.position;
                     break;
                 case ')':
@@ -217,9 +217,6 @@ class ConnectorJavascript extends ConnectorBase
                 }
             } );
         }
-        return this.newAnswer( {
-            prompt: info.prompt, tokens: info.tokens }, 
-            'object', 
-            'awi:answer' );
+        return this.newAnswer( { prompt: info.prompt, tokens: info.tokens }, 'awi:answer' );
     }
 }

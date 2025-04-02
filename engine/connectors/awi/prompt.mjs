@@ -102,7 +102,9 @@ class ConnectorPrompt extends ConnectorBase
                             '<BR>', 
                             'awi:user-changed:iwa', 
                             '------------------------------------------------------------------' ],
-                            { user: 'information', userName: basket.configuration.name, newLine: true, prompt: false } );
+								{ user: 'information', 
+								userName: userName,
+								newLine: true, prompt: false } );
                         prompt = 'Hello Awi... Could you first say hello to the user ' + userName + ' then invent a funny joke about programming chores?';
                         logged = true;
 					}
@@ -150,24 +152,30 @@ class ConnectorPrompt extends ConnectorBase
 	}
 	async getParameters( argsIn, basket = {}, control = {} )
 	{
-        var { list, args } = this.awi.getArgs( [ 'list', 'args' ], argsIn, basket, [ [], {} ] );
+		var { list, args } = this.awi.getArgs( [ 'list', 'args' ], argsIn, basket, [ [], {} ] );
 		control.editor.saveInputs();
+		var data = {};
         for ( var i = 0; i < list.length; i++ )
-        {
-            list[ i ] = {
+		{
+			var newList = [ {
                 type: 'bubble',
                 group: 'awi',
                 token: 'input',
                 config: {},
                 parameters: { inputInfo: [ { type: 'object', name: 'inputInfo', value: this.awi.utilities.convertPropertiesToParams( list[ i ] ) } ] }
-            }
-        }
-        var data = {};
-        var answer = this.branch.initTokenList( [ list, {} ], basket, control );
-        if ( answer.isSuccess() )
-            answer = await this.branch.run( { list: list, from: 'start', args: {} }, data, control );
+            } ];
+			var answer = await this.branch.initTokens( [ newList, {} ], basket, control );
+			if ( answer.isSuccess() )
+			{
+				answer = await this.branch.runTokens( { tokens: newList, from: 'start', args: {} }, data, control );
+				if ( answer.isSuccess() )
+				{
+					data[ list[ i ].name ] = answer.getValue();
+				}
+			}
+		}
 		control.editor.restoreInputs();
-        return answer;
+        return this.newAnswer( data );
 	}
 	escape( force )
 	{

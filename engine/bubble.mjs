@@ -105,10 +105,10 @@ export default class BubbleBase extends Base
 		if ( todo.length > 0 )
         {
 			var answer = await this.awi.prompt.getParameters( { list: todo, args: {} }, basket, control );
-            if ( !answer.error )
+            if ( answer.isSuccess() )
             {
-                for ( var p in answer )
-                    args[ p ] = answer[ p ];
+                for ( var p in answer.data )
+                    args[ p ] = answer.data[ p ];
             }
         }
         for ( var i = 0; i < this.properties.inputs.length; i++ )

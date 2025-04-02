@@ -50,7 +50,7 @@ class BubbleWelcome extends BubbleBase
         var answer = await this.awi.configuration.saveConfigs();
         if ( answer.isSuccess() )
         {
-            return this.newAnswer( 'object', { 
+            return this.newAnswer( { 
                 firstName: config.firstName,
                 lastName: config.lastName,
                 fullName: config.fullName,

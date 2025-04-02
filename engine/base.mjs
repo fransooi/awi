@@ -28,7 +28,7 @@ export default class Base
 		this.className = '***UNDEFINED***';
         this.group = '***UNDEFINED***';
 	}
-    newAnswer( value = 0, type, toPrint )
+    newAnswer( value = 0, toPrint='~{value}~', type )
     {
         return new Answer( this, value, type, toPrint );
     }

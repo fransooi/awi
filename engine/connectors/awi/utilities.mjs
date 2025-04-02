@@ -843,82 +843,10 @@ class ConnectorUtilities extends ConnectorBase
 	{
 		return c >= 'A' && c <= 'Z';
 	}
-	getMimeType( path, type )
+	getMimeType( path )
 	{
-		var ext = this.extname( path ).toLowerCase();
-		if ( ext == '.mp4' || ext == '.ogg' )
-			type = ( typeof type == 'undefined' ? 'audio' : type );
-		switch ( ext )
-		{
-			case '.png':
-				return 'image/png';
-			case '.jpg':
-			case '.jpeg':
-				return 'image/jpeg';
-			case '.tiff':
-				return 'image/tiff';
-			case '.gif':
-				return 'image/gif';
-			case '.webp':
-				return 'image/webp';
-			case '.bmp':
-				return 'image/bmp';
-
-			case '.pdf':
-				return 'application/pdf';
-			case '.gzip':
-				return 'application/gzip';
-			case '.zip':
-				return 'application/zip';
-			case '.json':
-				return 'application/json';
-			case '.sql':
-				return 'application/sql';
-			case '.':
-				return 'application/rtf';
-
-			case '.3mf':
-				return 'model/3mf';
-			case '.mesh':
-				return 'model/mesh';
-			case '.obj':
-				return 'model/obj';
-			case '.stl':
-				return 'model/stl';
-			case '.vrml':
-				return 'model/vrml';
-			case '.rtf':
-				return 'text/rtf';
-
-			case '.mp4':
-				return type + '/mp4';
-			case '.ogg':
-				return type + '/ogg';
-			case '.mpeg':
-				return 'video/mpeg';
-
-			case '.aac':
-				return 'audio/aac';
-			case '.wav':
-				return 'audio/wav';
-			case '.mp3':
-				return 'audio/mp3';
-
-			case '.js':
-            case '.mjs':
-                return 'text/javascript';
-			case '.html':
-				return 'text/html';
-			case '.md':
-				return 'text/markdown';
-			case '.txt':
-				return 'text/plain';
-			case '.xml':
-				return 'text/xml';
-
-			default:
-				return
-		}
+		var ext = this.awi.system.extname( path ).toLowerCase();
+		return this.awi.system.getMimeType( ext );
 	}
 	serializeIn( map, root )
 	{
@@ -1340,11 +1268,11 @@ class ConnectorUtilities extends ConnectorBase
 	{
 		try
 		{
-			return this.newAnswer( HJSON.parse( hjsonString ), 'object' );
+			return this.newAnswer( HJSON.parse( hjsonString ) );
 		}
 		catch
 		{
-			return this.newAnswer( 'awi:illegal-hjson' );
+			return this.newError( 'awi:illegal-hjson' );
 		}
 	}
 	HJSONStringify( obj )
@@ -1355,7 +1283,7 @@ class ConnectorUtilities extends ConnectorBase
 		}
 		catch
 		{
-			return this.newAnswer( 'awi:illegal-hjson' );
+			return this.newError( 'awi:illegal-hjson' );
 		}
 	}
 	JSONParse( jsonString )
@@ -1366,7 +1294,7 @@ class ConnectorUtilities extends ConnectorBase
 		}
 		catch
 		{
-			return this.newAnswer( 'awi:illegal-json' );
+			return this.newError( 'awi:illegal-json' );
 		}
 	}
 	JSONStringify( obj )
@@ -1377,7 +1305,7 @@ class ConnectorUtilities extends ConnectorBase
 		}
 		catch
 		{
-			return this.newAnswer( 'awi:illegal-json' );
+			return this.newError( 'awi:illegal-json' );
 		}
 	}
 	degreeToRadian( angle )

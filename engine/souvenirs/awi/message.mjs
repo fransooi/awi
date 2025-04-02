@@ -51,7 +51,7 @@ class SouvenirMessage extends SouvenirBase
 		var info = this.awi.utilities.matchTwoStrings( content, prompt, control );
 		if ( info.result > 0 )
 		{
-			return this.newAnswer( { result: info.result, match: info, content: content }, 'data' );
+			return this.newAnswer( { result: info.result, match: info, content: content } );
 		}
 		return this.newError( 'awi:not-found' );
 	}
@@ -84,7 +84,7 @@ class SouvenirMessage extends SouvenirBase
 			}	
 		}
         if ( foundContent.length > 0 )
-		    return this.newAnswer( foundContent, 'data' );
+		    return this.newAnswer( foundContent );
         return this.newError( 'awi:not-found' );
 	}
 }

@@ -26,6 +26,7 @@ import { exec, spawn, execFile } from 'child_process'
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';    
 const __dirname = dirname(fileURLToPath( import.meta.url ) );
+import mime from 'mime-types';
 export { ConnectorNode as Connector }
 
 class ConnectorNode extends ConnectorBase
@@ -67,7 +68,7 @@ class ConnectorNode extends ConnectorBase
         path = this.normalize( path );
 		try
 		{
-			return this.newAnswer( FS.readFileSync( path, options ), 'data' );
+			return this.newAnswer( FS.readFileSync( path, options ) );
 		}
 		catch( e )
 		{
@@ -79,7 +80,7 @@ class ConnectorNode extends ConnectorBase
         path = this.normalize( path );
 		try
 		{
-			return this.newAnswer( FS.writeFileSync( path, data, options ), 'data' );
+			return this.newAnswer( FS.writeFileSync( path, data, options ) );
 		}
 		catch( e )
 		{
@@ -146,6 +147,23 @@ class ConnectorNode extends ConnectorBase
 		{
 			return this.newError( 'awi:file-not-found' );
 		}
+	}
+	async rename( path, newPath )
+	{
+        path = this.normalize( path );
+        newPath = this.normalize( newPath );
+		try
+		{
+			return this.newAnswer( FS.renameSync( path, newPath ) );
+		}
+		catch( e )
+		{
+			return this.newError( 'awi:cannot-rename-file' );
+		}
+	}
+	getMimeType( extension )
+	{
+		return mime.lookup( extension );
 	}
 	exists( path )
 	{

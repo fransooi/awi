@@ -108,7 +108,7 @@ export default class ConnectorPersona extends ConnectorBase
 			}
 		}
 		if ( result.direct.souvenirs.length + result.indirect.souvenirs.length > 0 )
-			return this.newAnswer( result, 'object' );
+			return this.newAnswer( result );
 		return this.newError( 'awi:notfound' );        
 	}
     getPrompt( token, basket, control )
@@ -155,7 +155,7 @@ export default class ConnectorPersona extends ConnectorBase
 						memory = Function( memory );
 						memory = memory();
 						memory = self.awi.utilities.serializeIn( memory.root, {} );
-						return this.newAnswer( memory, 'object' );
+						return this.newAnswer( memory );
 					}
 					catch( e )
 					{
@@ -225,11 +225,11 @@ export default class ConnectorPersona extends ConnectorBase
     async preparePrompt( args, basket, control )
     {
         var { prompt } = this.awi.getArgs( [ 'prompt' ], args, basket, [ '' ] );
-        return this.newAnswer( { prompt: prompt }, 'object' );
+        return this.newAnswer( { prompt: prompt } );
     }
     async computeResponse( args, basket, control )
     {
         var { response } = this.awi.getArgs( [ 'response' ], args, basket, [ '' ] );
-        return this.newAnswer( { response: response }, 'object' );
+        return this.newAnswer( { response: response } );
     }
 }

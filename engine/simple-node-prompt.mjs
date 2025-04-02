@@ -29,7 +29,7 @@ async function startAwi( prompt, config )
 	{
         if ( prompt )
         {
-		    await awi.prompt.prompt( { prompt: prompt }, basket, { editor: awi.editor.current } );            
+		    await awi.prompt.prompt( { prompt: prompt }, basket, { editor: awi.editor } );            
         }
 	}
     else
@@ -42,7 +42,7 @@ function getArguments()
 {
 	var answer =
 	{
-		prompt: 'francois',
+		prompt: 'newuser',
         elements:
         [
             { name: 'connectors/system/node', config: { priority: 100 }, options: {} },
@@ -51,13 +51,12 @@ function getArguments()
             { name: 'connectors/awi/utilities', config: { priority: 99 }, options: {} },
             { name: 'connectors/awi/configuration', config: { priority: 99 }, options: {} },
             { name: 'connectors/awi/time', config: { priority: 99  }, options: {} },
-            { name: 'connectors/editor/commandline', config: { priority: 99 }, options: {} },
-            { name: 'connectors/editor/websocket', config: { priority: 99 }, options: {} },
+            { name: 'connectors/editor/editor', config: { priority: 99 }, options: { default: 'commandline', config: {} } },
+            { name: 'connectors/network/websocketserver', config: { priority: 99 }, options: {} },
             { name: 'bubbles/awi/*', config: {}, options: {} },
             { name: 'souvenirs/awi/*', config: {}, options: {} },
             { name: 'memories/awi/*', config: {}, options: {} },
             { name: 'connectors/language/javascript', config: { priority: 98 }, options: {} },
-            { name: 'connectors/project/phaser', config: { priority: 98 }, options: {} },
             { name: 'connectors/awi/parser', config: { priority: 97 }, options: {} },
             { name: 'connectors/awi/persona', config: { priority: 96 }, options: {} },
             { name: 'connectors/awi/prompt', config: { priority: 95 }, options: {} },

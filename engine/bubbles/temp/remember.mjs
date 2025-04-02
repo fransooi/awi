@@ -69,10 +69,10 @@ class BubbleRemember extends BubbleBase
 			if ( /*basket.scanLevel > 1 &&*/ answer.indirect.souvenirs.length > 0 )
 				control.editor.print( 'Found ' + answer.indirect.souvenirs.length + ' indirect souvenir(s).', { user: 'information' } );
 			else
-				control.editor.print(venir found.', { user: 'information' } );
+				control.editor.print( 'No indirect souvenir found.', { user: 'information' } );
 
 			this.awi.remember( prompt, answer.direct, answer.indirect );
-			return this.newAnswer( { directSouvenir: answer.direct, indirectSouvenirs: answer.indirect }, 'object' );
+			return this.newAnswer( { directSouvenir: answer.direct, indirectSouvenirs: answer.indirect } );
 		}
 		return answer;
 	}

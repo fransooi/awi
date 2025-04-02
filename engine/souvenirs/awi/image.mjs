@@ -51,7 +51,7 @@ class SouvenirImage extends SouvenirBase
 		if ( info.result > 0 )
 		{
 			var content = await this.getContent( args, basket, control );
-			return this.newAnswer( { result: info.result, match: info, content: content.basket.imageInfo }, 'xdata' );
+			return this.newAnswer( { result: info.result, match: info, content: content.basket.imageInfo } );
 		}
 		return this.newError( 'awi:not-found' );
 	}
@@ -64,7 +64,7 @@ class SouvenirImage extends SouvenirBase
             path: path,
             text: text,
             date: this.awi.utilities.getTimestampFromStats( stats )
-        }, 'data' );
+        } );
 	}
 	async findSouvenirs( args, basket, control )
 	{

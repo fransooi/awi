@@ -324,7 +324,7 @@ class BubbleDigest extends BubbleBase
 				for ( var i = 0; i < result.invalid.length; i++ )
 					control.editor.print(invalid[ i ], { user: 'warning' } );
 			}
-			return this.newAnswer( { success: true, receiverName: basket.receiverName, souvenirs: result.valid }, 'object' );
+			return this.newAnswer( { success: true, receiverName: basket.receiverName, souvenirs: result.valid }, 'awi:import-completed' );
 		}
 		return answer;
 	}

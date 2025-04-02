@@ -56,8 +56,8 @@ class BubbleEdit extends BubbleBase
 			if ( play.isSuccess() )
 			{
 				if ( typeof files != 'undefined' )
-					return this.newAnswer( { files: files, fileEdited: file }, 'object' );
-				return this.newAnswer( file, 'array' );
+					return this.newAnswer( { files: files, fileEdited: file }, 'awi:file-edited' );
+				return this.newAnswer( file, 'awi:file-edited' );
 			}
 		}
 

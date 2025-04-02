@@ -47,7 +47,7 @@ class BubbleInput extends BubbleBase
 		var result;
 		var firstResult;
 		var firstType = '';
-        var inputInfo = args.inputInfo.result;
+        var inputInfo = args.inputInfo.data;
 		var type = inputInfo.type;
 		var dot = type.indexOf( '.' );
 		if ( dot > 0 )
@@ -88,6 +88,7 @@ class BubbleInput extends BubbleBase
 
 		var self = this;
 		var finished = false;
+		var resultAnswer = {};
 		control.editor.rerouteInput( 
 			function( args )
 			{
@@ -197,6 +198,8 @@ class BubbleInput extends BubbleBase
 				}
 				control.editor.rerouteInput();
 				finished = true;
+				resultAnswer[ inputInfo.name ] = result;
+				return self.newAnswer( resultAnswer );
 			} );
 
 		var prompt = this.awi.configuration.getPrompt( 'question' );
@@ -216,7 +219,7 @@ class BubbleInput extends BubbleBase
 							if ( result == '<___cancel___>' )
 								resolve( self.newError( 'awi:cancelled' ) );
 							else
-								resolve( self.newAnswer( result, type ) );
+								resolve( self.newAnswer( result, '' ) );
 						}
 					}, 10 );
 			};

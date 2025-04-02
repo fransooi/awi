@@ -100,9 +100,9 @@ class ConnectorMessages extends ConnectorBase
                 return getIt( start, endIwa );
         }
         else if ( endAwi >= 0 )
-            return getIt( start, endAwi - 1 );
+            return getIt( start, endAwi );
         else if ( endIwa >= 0 )
-            return getIt( start, endIwa - 1 );
+            return getIt( start, endIwa );
 
         return getIt( start , this.messages.length );
 	}

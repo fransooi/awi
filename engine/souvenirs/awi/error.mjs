@@ -57,7 +57,7 @@ class SouvenirError extends SouvenirBase
             prompt: basket.prompt,
             from: basket.from,
             control: control
-        }, 'data' );
+        } );
 	}
 	async findSouvenirs( args, basket, control )
 	{

@@ -20,19 +20,18 @@ import Base from './base.mjs'
 
 export default class Awi extends Base
 {
-	constructor( parent, config )
+	constructor( awi, config )
 	{
-        super( null, config );
+        super( awi, config );
 
 		this.className = 'Awi';
 		this.version = '0.5';
 
-		this.host = config.host;
-		this.user = config.user;
+        this.hostAwi = config.hostAwi;
 		this.connectors = {};
 		this.bubbles = {};
 		this.souvenirs = {};
-		this.memories = {};
+		this.memories = {};        
         
         this.classes =
         {
@@ -49,7 +48,8 @@ export default class Awi extends Base
 		var self = this;
 		var idCheck = {};
         var count = 0;
-
+        console.log('');
+        console.log('--- Awi ' + this.version + ' ---');
         async function createElements( type, group,  name, config = {}, options = {} )
         {
             if ( type == 'connectors' )
@@ -104,7 +104,7 @@ export default class Awi extends Base
 		}
 		async function createConnector( group, name, config = {}, options = {} )
 		{
-            var text = type + '-' + group + '-' + name;
+            var text = 'connector-' + group + '-' + name;
             console.log( 'Loading ' + text );
 			var exports = await import( './connectors/' + group + '/' + name + '.mjs' );
             var newClass = new exports.Connector( self, config );
@@ -180,15 +180,15 @@ export default class Awi extends Base
 		if ( this.connected )
         {
 			prompt.push( '<BR>Ready.<BR>' );
-			answer = this.newAnswer( prompt, 'array' ); 
+			answer = this.newAnswer( prompt ); 
         }
         else
         {
             prompt.push( 'Cannot connect!' );
 			answer = this.newError( 'awi:cannot-initialize' )
         }
-		if ( this.editor.connected && !options.fromAwi )
-			this.editor.current.print( prompt, { user: 'awi', newLine: true, prompt: false } );
+		if ( this.editor.connected )
+			this.editor.print( prompt, { user: 'awi', newLine: true, prompt: false } );
 		return answer;
 	}
     getArgs( names = [], args = [], basket = {}, defaults = [] )
@@ -243,7 +243,7 @@ export default class Awi extends Base
                 }
             }
         }
-        return this.newAnswer( answer, 'data' );
+        return this.newAnswer( answer );
     }
     async callBubbles( argsIn, basket = {}, control )
     {
@@ -264,7 +264,7 @@ export default class Awi extends Base
         }
         if ( errors.length > 0 )
             return this.newError( 'awi:bubble-error' );
-        return this.newAnswer( basket, 'data' )
+        return this.newAnswer( basket )
     }
     async executeCommands( args, basket, control )
     {
@@ -318,7 +318,7 @@ export default class Awi extends Base
         }
         if ( errors.length > 0 )
             return this.newError( 'awi:connector-error', errors, 'object' );
-        return this.newAnswer( args, 'data' );
+        return this.newAnswer( args );
     }
 	alert( message, options )
 	{
@@ -328,7 +328,7 @@ export default class Awi extends Base
 	{
 		console.warn( message );
 		if ( this.editor && this.editor.connected )
-			this.editor.print( this, message.split( '\n' ), { user: 'systemwarning' } );
+			this.editor.print( message.split( '\n' ), { user: 'systemwarning' } );
 	}
 	async prompt( prompt, basket, control )
 	{

@@ -25,8 +25,6 @@ export default class Answer
 		this.awi = parent.awi;
         this.error = null;
         this.setValue(data, type);
-        if (typeof toPrint == 'undefined')
-            toPrint = '~{value}~';
         this.toPrint = toPrint;
 	}
     setError( error, errorData )
@@ -61,74 +59,53 @@ export default class Answer
     }
     setValue( value = 0, type )
     {
-        if ( typeof type == 'undefined' ){
-            if (this.awi.utilities.isArray(value))
+        if ( typeof type == 'undefined' )
+        {
+            if (Array.isArray( value ))
                 type = 'array';
-            else if (this.awi.utilities.isObject(value))
+            else if (typeof value === "object" && !Array.isArray( value ) && value !== null)
                 type = 'object';
-            else if (this.awi.utilities.isString(value))
+            else if (typeof value == 'string')
                 type = 'string';
-            else if (this.awi.utilities.isNumber(value))
+            else if (typeof value == 'number')
                 type = 'number';
+            else if ( {}.toString.call(value) === '[object Function]')
+                type = 'function';
             else
                 type = 'int';
         }
         this.type = type;
         this.data = value;
     }
-    setData( data )
-    {
-        this.data = data;
-        this.type = 'data';
-    }
     setToPrint( toPrint )
     {
         this.toPrint = toPrint;
     }
-    getData()
-    {
-        return this.data;
-    }
-    getType()
-    {
-        return this.type;
-    }
 	getString( format )
 	{
-        function getStr( type, data )
+        switch ( this.type )
         {
-            switch ( type )
-            {
-                case 'boolean':
-                    return ( data ? 'true' : 'false' );
-                case 'int':
-                    return '' + data;
-                case 'float':
-                    return this.awi.messages.formatFloat( data, format );
-                case 'number':
-                    return this.awi.messages.formatNumber( data, format );
-                case 'bin':
-                    return '%' + this.awi.messages.formatBin( data, format );
-                case 'hex':
-                    return '$' + this.awi.messages.formatHex( data, format );
-                case 'string':
-                    return data;
-                case 'data':
-                case 'array':
-                case 'object':
-                case 'function':
-                    return data.toString();
-                default:
-                    break;
-            }
-            return '***ERROR***';
+            case 'boolean':
+                return ( this.data ? 'true' : 'false' );
+            case 'int':
+                return '' + this.data;
+            case 'float':
+                return this.awi.messages.formatFloat( this.data, format );
+            case 'number':
+                return this.awi.messages.formatNumber( this.data, format );
+            case 'bin':
+                return '%' + this.awi.messages.formatBin( this.data, format );
+            case 'hex':
+                return '$' + this.awi.messages.formatHex( this.data, format );
+            case 'string':
+                return this.data;
+            case 'data':
+            case 'array':   
+            case 'object':
+            case 'function':
+            default:
+                return this.data.toString();
         }
-    
-        if ( this.type == 'answer' )
-            return this.data.getString( format );
-        else if ( this.type == 'result' )
-            return getStr( this.data.type, this.data.data );
-        return getStr( this.type, this.data );
 	}
 	getValue( outType )
 	{
@@ -142,10 +119,29 @@ export default class Answer
             return this.awi.messages.getMessage( this.error, { value: this.getString( format ) } );
         
         var toPrint = this.toPrint;
-        if ( !toPrint )
+        if ( toPrint == '' )
+            return '';
+        if ( !toPrint)
             toPrint = '~{value}~'
         else if ( typeof toPrint == 'function' )
             return toPrint( this, format );
-        return this.awi.messages.getMessage( toPrint, { value: this.getString( format ) } );
+        var value;
+        if ( this.type == 'object' )
+            value = this.data;
+        else
+            value = { value: this.getString( format ) };
+        var text = '';
+        if ( typeof toPrint == 'string' )
+            text = this.awi.messages.getMessage( toPrint, value );
+        else
+        {
+            for ( var t = 0; t < toPrint.length; t++ )
+            {
+                if ( t > 0 )
+                    text += '\n';
+                text += this.awi.messages.getMessage( toPrint[ t ], value );
+            }
+        }
+        return text;
     }
 }

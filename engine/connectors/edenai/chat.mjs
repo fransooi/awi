@@ -88,7 +88,7 @@ max_tokens: ~{max_tokens}~`, data );
         axios.request( options )
             .then( function( response )  
             {
-                answer = self.newAnswer( response.data[ data.providers ].generated_text, 'object', 'awi:chat_answer' );
+                answer = self.newAnswer( response.data[ data.providers ].generated_text, 'awi:chat-answer' );
             } )
             .catch( function( err ) 
             {                    
@@ -107,9 +107,10 @@ max_tokens: ~{max_tokens}~`, data );
         if ( !this.user || userName != this.user )
         {
             var configAnswer = await this.awi.configuration.getToolConfiguration( 'edenai', 'chat' );
-            if ( configAnswer.isSuccess() )
+            if ( configAnswer.isError() )
             {
                 var key = this.config.key;
+                key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZmZjYzY2YzMtOTNmZi00YjYyLWIxNDgtY2FhZWJkNjhkZjIxIiwidHlwZSI6ImZyb250X2FwaV90b2tlbiJ9.Y73ATnBg_mMIZVj78A1Jf5RH-eCXfVPrihgqxSRT0R0';
                 if ( !key )
                     return this.newAnswer( 'awi: configuration_not_found' );
                 configAnswer = await this.awi.configuration.createToolConfiguration( 'edenai', 'chat', 
@@ -130,6 +131,6 @@ max_tokens: ~{max_tokens}~`, data );
             this.user = userName;
             this.configuration = configAnswer.getValue();
         }
-        return this.newAnswer( { chat: { config: this.configuration } }, 'object' );
+        return this.newAnswer( { chat: { config: this.configuration } } );
     }
 }

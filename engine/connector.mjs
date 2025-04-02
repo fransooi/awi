@@ -36,7 +36,7 @@ export default class ConnectorBase extends Base
 	async connect( /*options*/ )
 	{
 	}
-    setConnected( yesNo )
+    setConnected( yesNo = true )
     {        
 		this.connectAnswer = this.newAnswer( {
 			success: yesNo,
@@ -45,12 +45,13 @@ export default class ConnectorBase extends Base
             className: this.className,
             group: this.group,
             prompt: this.name + ' connector version ' + this.version, version: this.version
-		}, 'data', function( answer )
+		}, function( answer )
         {
             if ( answer.isSuccess() )
                 return '(ok) ' + answer.data.group + '/' + answer.data.token + ': ' + answer.data.prompt;
             return '(error) ' + answer.data.group + '/' + answer.data.token + ': ' + answer.data.prompt;
-        } );
+        }, 'data' );
+        this.connected = yesNo;
         if ( !yesNo )
             this.connectAnswer.setError( 'error' );
 		return this.connectAnswer;

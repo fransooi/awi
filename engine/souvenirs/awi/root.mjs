@@ -56,13 +56,13 @@ class SouvenirRoot extends SouvenirBase
         return this.newAnswer( {
             senderName: this.parameters.senderName,
 			receiverName: this.parameters.receiverName,
-        }, 'data' );
+        } );
 	}
 	async findSouvenirs( args, basket, control )
 	{
 		return this.newAnswer( {
             senderName: this.parameters.senderName,
             receiverName: this.parameters.receiverName,
-        }, 'data' );
+        } );
 	}
 }

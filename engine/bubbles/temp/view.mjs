@@ -52,7 +52,7 @@ class BubbleView extends BubbleBase
 		async function playIt( file, files )
 		{
 			var play = await self.awi.system.playFile( file, 'view', control );
-			return this.newAnswer( { files: files, fileViewed: file }, 'object' );;
+			return this.newAnswer( { files: files, fileViewed: file } );;
         }
 
 		await super.play( args, basket, control );

@@ -56,7 +56,7 @@ class BubbleList extends BubbleBase
 		for ( var f = 0; f < answer.filelist.length; f++ )
 			result.push( ( f + 1 ) + '. ' + answer.fileList[ f ].path );
 		control.editor.print( result, { user: 'information' } );
-		return this.newAnswer( files, 'array' );
+		return this.newAnswer( files, 'awi:file-list' );
 	}
 	async playback( args, basket, control )
 	{

@@ -54,7 +54,7 @@ class BubbleRun extends BubbleBase
 		async function playIt( file, files )
 		{
 			var play = await self.awi.system.playFile( file, 'run', control );
-			return this.newAnswer( { files: files, fileRan: file }, 'object' );
+			return this.newAnswer( { files: files, fileRan: file } );
 		}
 
 		await super.play( args, basket, control );
@@ -80,13 +80,13 @@ class BubbleRun extends BubbleBase
 		control.editor.print( [ 'You can edit these files: ' ], { user: 'information' } );
 		for ( var f = 0; f < answer.fileList.length; f++ )
 			result.push( ( f + 1 ) + '. ' + answer.fileList[ f ].path );
-		control.editor.print('information' } );
+		control.editor.print( result, { user: 'information' } );
 		var param = await this.awi.prompt.getParameters( [
 			{ choice: 'Please enter a number between 1 and ' + answer.fileList.length, type: 'number', interval: [ 1, answer.fileList.length ], optional: false, default: 0 },
 			], control );
 		if ( param.isSuccess() )
 			return await playIt( answer.fileList[ param.choice - 1 ], answer.filelist );
-		return this.newAnswer( files: files, fileRan: '' }, 'object' );
+		return this.newAnswer( { files: files, fileRan: '' } );
 	}
 	async playback( args, basket, control )
 	{
