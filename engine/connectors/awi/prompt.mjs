@@ -125,6 +125,9 @@ class ConnectorPrompt extends ConnectorBase
 					for ( var l = 0; l < list.length; l++ )
 						control.editor.print( '    ' + list[ l ].fullName, { user: 'information' } );
 					control.editor.print( 'Please enter the first name of a user, or "newuser"...', { user: 'information' } );
+					control.editor.addDataToReply( 'userList', list );					
+					control.editor.waitForInput();
+					control.promptOn--;
 					return this.newAnswer();
 				}
 			}

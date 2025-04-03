@@ -18,5 +18,4 @@ export const SERVERCOMMANDS = {
     COPY_FOLDER: 'copyFolder',
     MOVE_FOLDER: 'moveFolder',
   };
-  
    

@@ -119,6 +119,10 @@ class ConnectorEditor extends ConnectorBase
         else
             console.error( 'No current editor to reroute input: ' + route );
     }
+    saveInputs()
+    {}
+    restoreInputs()
+    {}
     disableInput( )
     {
         if ( this.current )

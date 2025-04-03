@@ -19,7 +19,7 @@
 *
 */
 import ConnectorProject from './project.mjs'
-import { SERVERCOMMANDS } from '../../servercommands.js';
+import { SERVERCOMMANDS } from '../../servercommands.mjs';
 export { ConnectorAmos1_3 as Connector }
 
 class ConnectorAmos1_3 extends ConnectorProject

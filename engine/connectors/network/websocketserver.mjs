@@ -19,7 +19,7 @@
 *        to receive / send prompts.
 */
 import ConnectorBase from '../../connector.mjs'
-import { SERVERCOMMANDS } from '../../servercommands.js'
+import { SERVERCOMMANDS } from '../../servercommands.mjs'
 import { WebSocketServer } from 'ws'
 import Awi from '../../awi.mjs'
 export { ConnectorWebSocketServer as Connector }

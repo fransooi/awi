@@ -19,6 +19,7 @@
 */
 import EditorBase from './editorbase.mjs';
 export { EditorWebSocket as Editor }
+import { SERVERCOMMANDS } from '../../servercommands.mjs'
 class EditorWebSocket extends EditorBase
 {
 	constructor( awi, config = {} )
@@ -55,28 +56,31 @@ class EditorWebSocket extends EditorBase
             this.projectConnectors=answer.data;
         this.toPrint.splice(0, 0, 'WebSocket connection established with user: ' + this.userName + ', key: ' + this.userKey + ', handle: ' + this.handle );
         this.toPrintClean.splice(0, 0, 'WebSocket connection established with user: ' + this.userName + ', key: ' + this.userKey + ', handle: ' + this.handle );
-        this.toReply = { handle: this.handle, user: this.userName };
+        this.reply( { handle: this.handle, user: this.userName }, message );
         this.command_prompt( { prompt: this.userName }, message );
         return true;
+    }
+    addDataToReply( name, data )
+    {
+        this.toReply[ name ] = data;
     }
 	waitForInput( options = {} )
 	{
 		super.waitForInput( options );
-		if ( this.toPrint.length > 0 && this.promptMessage)
+		if (this.toPrint.length > 0 || this.awi.utilities.isObjectEmpty(this.toReply))
 		{
-            var reply = {
+            var message = {
                 text: this.toPrint.join(''),
                 textClean: this.toPrintClean.join('\n'),
                 lastLine: this.lastLine
             };
             if ( this.toReply )
                 for( var p in this.toReply )
-                    reply[ p ] = this.toReply[ p ];
-			this.reply( reply, this.promptMessage );
+                    message[ p ] = this.toReply[ p ];
+			this.sendMessage( SERVERCOMMANDS.PROMPT, message );
 			this.toPrint = [];
 			this.toPrintClean = [];
             this.toReply = {};
-            this.promptMessage = null;
 		}
 	}
 	print( text, options = {} )

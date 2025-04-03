@@ -1,5 +1,5 @@
 import ConnectorBase from '../../connector.mjs'
-import { SERVERCOMMANDS } from '../../servercommands.js';
+import { SERVERCOMMANDS } from '../../servercommands.mjs';
 
 export default class ConnectorProject extends ConnectorBase
 {

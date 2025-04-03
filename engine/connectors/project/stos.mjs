@@ -19,7 +19,7 @@
 *
 */
 import ConnectorProject from './project.mjs'
-import { SERVERCOMMANDS } from '../../servercommands.js';
+import { SERVERCOMMANDS } from '../../servercommands.mjs';
 export { ConnectorSTOS as Connector }
 
 class ConnectorSTOS extends ConnectorProject

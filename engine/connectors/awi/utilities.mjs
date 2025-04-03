@@ -162,6 +162,10 @@ class ConnectorUtilities extends ConnectorBase
 	{
 		return typeof item != 'undefined' ? (typeof item === "object" && !Array.isArray( item ) && item !== null) : false;
 	};
+	isObjectEmpty( obj )
+	{
+		return Object.keys( obj ).length === 0 && obj.constructor === Object;
+	}
 	isArray( item )
 	{
 		return typeof item != 'undefined' ? Array.isArray( item ) : false;

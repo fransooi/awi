@@ -98,4 +98,8 @@ class EditorCommandLine extends EditorBase
         this.toPrintClean = [];        
         return true;
 	}
+    saveInputs()
+    {}
+    restoreInputs()
+    {}
 }
