@@ -156,7 +156,7 @@ class ConnectorConfiguration extends ConnectorBase
 		{
 			this.configs[ name ] = config;
 			var persona = await this.loadConfig( 'persona-' + config.persona );
-			persona.prompts[ 'user' ] = '.(' + config.firstName + ') ';
+			persona.prompts[ 'user' ] = '.(' + name + ') ';
 			this.configs[ 'persona-' + config.persona ] = persona;
 		}
 	}
@@ -341,6 +341,10 @@ class ConnectorConfiguration extends ConnectorBase
 						firstName: '',
 						lastName: '',
 						fullName: '',
+						userName: '',
+						email:'',
+						country: '',
+						language: '',
 						persona: 'awi',
 						paths:
 						{
@@ -369,7 +373,7 @@ class ConnectorConfiguration extends ConnectorBase
 						},
 						takeNote:
 						[
-							'Please take note: you are talking to {firstName}.',
+							'Please take note: you are talking to {userName}.',
 							'\nNot more than 50 words in any response.'
 						],
 						paths: {
@@ -558,6 +562,10 @@ class ConnectorConfiguration extends ConnectorBase
 	{
         var config = this.getConfig( name );
 		return this.getConfig( 'persona-' + config.persona );
+	}
+	getUser()
+	{ 
+		return this.user;
 	}
 	getUserKey()
 	{

@@ -41,7 +41,7 @@ awi:verbose-set                         Verbose level set to ~{result}~
 awi:i-will-talk-less                    Verbose level set to ~{result}~, I will talk less from now on...
 awi:i-will-talk-more                    Verbose level set to ~{result}~, I will talk more from now on...
 awi:config-changed                      User configuration for "~{fullName}~" successfully created.
-awi:please-now-type                     Please now type "~{firstName}~" to login...
+awi:please-now-type                     Please now type "~{userName}~" to login...
 awi:the-result-is                       The result of the calculation is ~{result}~
 awi:the-hexadecimal-value-is            The hexadecimal value of ~{expression}~ is ~{result}~
 awi:the-binary-value-is                 The binary value of ~{expression}~ is ~{result}~
@@ -57,8 +57,12 @@ awi:project-exists                      Project ~{value}~ already exists
 awi:project-created                     Project ~{value}~ created successfully
 awi:to-print                            Default to print: ~{value}~
 awi:template-not-found                  Template ~{value}~ not found
-awi:socket-new-connection               New connection from ~{name}~ with key ~{key}~
+awi:socket-new-connection               New connection from ~{name}~
 awi:socket-user-disconnected            User ~{name}~ disconnected
 awi:project-not-found                   Project ~{value}~ not found
+awi:error-when-creating-user            Error when creating user ~{value}~
+awi:illegal-value                       Illegal parameter ~{value}~
+awi:account-already-exist               Account ~{value}~ already exists.
+
 
 

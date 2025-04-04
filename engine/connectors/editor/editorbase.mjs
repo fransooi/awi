@@ -34,11 +34,14 @@ export default class EditorBase extends Base
 		this.toPrintClean = [];
 		this.toReply = {};
 	}
+    addDataToReply( data )
+	{
+	}
     replyError( error, message )
-    {
-        if ( message )
-            this.reply( { error: error.getPrint() }, message );
-        return error;
+	{
+		if ( message )
+			this.reply( { error: error.getPrint() }, message );
+		return error;
     }
     replySuccess( answer, message )
     {

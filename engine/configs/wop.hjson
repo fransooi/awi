@@ -1,11 +1,11 @@
 {
-  firstName: ""
-  lastName: ""
-  fullName: ""
-  userName: ""
-  email: ""
-  country: ""
-  language: ""
+  firstName: wop
+  lastName: wop
+  fullName: wop wop
+  userName: wop
+  email: wop@wop.com
+  country: wop
+  language: english
   persona: awi
   paths:
   {

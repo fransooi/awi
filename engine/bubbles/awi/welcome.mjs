@@ -34,23 +34,28 @@ class BubbleWelcome extends BubbleBase
     
             action: 'ask for user first and last names and creates a new configuration',
             inputs: [ { firstName: 'your first name', type: 'string', optional: false },
-                      { lastName: 'your last name', type: 'string', optional: false  } ],
-            outputs: [ { userName: 'user name', type: 'string' } ]
+                      { lastName: 'your last name', type: 'string', optional: false  },
+                      { userName: 'user name', type: 'string', optional: false  },                     ],
+            outputs: [ { userName: 'user name', type: 'string' },
+                    { firstName: 'first name', type: 'string' },
+                    { lastName: 'last name', type: 'string' }   
+             ]
         } );
 	}
 	async play( args, basket, control )
 	{
 		await super.play( args, basket, control );
-
-        var config = this.awi.configuration.getNewUserConfig();
-        config.firstName = args.firstName;
-        config.lastName = args.lastName;
+		var config = this.awi.configuration.getNewUserConfig();
+		config.firstName = args.firstName;
+		config.lastName = args.lastName;
         config.fullName = args.firstName + ' ' + args.lastName;
-        await this.awi.configuration.setNewUserConfig( config.firstName.toLowerCase(), config );
+        config.userName = args.userName;
+        await this.awi.configuration.setNewUserConfig( config.userName.toLowerCase(), config );
         var answer = await this.awi.configuration.saveConfigs();
         if ( answer.isSuccess() )
         {
             return this.newAnswer( { 
+                userName: config.userName,
                 firstName: config.firstName,
                 lastName: config.lastName,
                 fullName: config.fullName,

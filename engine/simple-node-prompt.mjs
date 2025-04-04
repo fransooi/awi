@@ -42,7 +42,7 @@ function getArguments()
 {
 	var answer =
 	{
-		prompt: 'francois',
+		prompt: 'fran',
         elements:
         [
             { name: 'connectors/system/node', config: { priority: 100 }, options: {} },

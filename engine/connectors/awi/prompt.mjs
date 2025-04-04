@@ -121,11 +121,15 @@ class ConnectorPrompt extends ConnectorBase
 				}
 				else
 				{
+					var sentList = [];
 					control.editor.print( 'List of registered users on this machine...', { user: 'information' } );
-					for ( var l = 0; l < list.length; l++ )
-						control.editor.print( '    ' + list[ l ].fullName, { user: 'information' } );
+					for ( var l = 0; l < list.length; l++ ){
+						control.editor.print( '    ' + list[ l ].userName, { user: 'information' } );
+						sentList.push( list[ l ].userName );
+					}
 					control.editor.print( 'Please enter the first name of a user, or "newuser"...', { user: 'information' } );
-					control.editor.addDataToReply( 'userList', list );					
+					control.editor.addDataToReply( 'userList', sentList );
+					control.editor.addDataToReply( 'notLoggedIn', true );
 					control.editor.waitForInput();
 					control.promptOn--;
 					return this.newAnswer();

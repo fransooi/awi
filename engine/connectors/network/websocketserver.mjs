@@ -129,7 +129,6 @@ class ConnectorWebSocketServer extends ConnectorBase
                     connection: connection,
                     parent: this,
                     userName: message.parameters.userName,
-                    userKey: message.parameters.userKey,
                     connect: false
                 }} },
                 { name: 'bubbles/awi/*', config: {}, options: {} },
@@ -152,7 +151,7 @@ class ConnectorWebSocketServer extends ConnectorBase
         var answer = await awi2.connect( {} );
         if ( answer.isSuccess() )
         {
-			this.awi.editor.print('awi:socket-new-connection', { key: message.parameters.userKey, name: message.parameters.userName, user: 'awi' } );
+			this.awi.editor.print('awi:socket-new-connection', { name: message.parameters.userName, user: 'awi' } );
             this.editors[ awi2.editor.current.handle ] = awi2.editor.current;
             this.current = awi2.editor.current;
 			this.current.connect( message.parameters, message );

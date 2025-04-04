@@ -17,5 +17,7 @@ export const SERVERCOMMANDS = {
     RENAME_FOLDER: 'renameFolder',
     COPY_FOLDER: 'copyFolder',
     MOVE_FOLDER: 'moveFolder',
+    CREATE_ACCOUNT: 'createAccount',
+    LOGIN: 'login',
   };
    

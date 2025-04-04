@@ -33,7 +33,6 @@ class EditorWebSocket extends EditorBase
         this.lastMessage = config.lastMessage;
         this.lastMessage.handle = this.handle;
         this.userName = config.userName;
-        this.userKey = config.userKey;
 
         this.lastLine = '';
         this.inputEnabled = true;
@@ -54,10 +53,9 @@ class EditorWebSocket extends EditorBase
         var answer = await this.awi.callConnectors( [ 'isProjectConnector', 'project', { } ] );
         if ( answer.isSuccess() )
             this.projectConnectors=answer.data;
-        this.toPrint.splice(0, 0, 'WebSocket connection established with user: ' + this.userName + ', key: ' + this.userKey + ', handle: ' + this.handle );
-        this.toPrintClean.splice(0, 0, 'WebSocket connection established with user: ' + this.userName + ', key: ' + this.userKey + ', handle: ' + this.handle );
         this.reply( { handle: this.handle, user: this.userName }, message );
-        this.command_prompt( { prompt: this.userName }, message );
+        this.waitForInput();
+        //this.command_prompt( { prompt: this.userName }, message );
         return true;
     }
     addDataToReply( name, data )
@@ -67,7 +65,7 @@ class EditorWebSocket extends EditorBase
 	waitForInput( options = {} )
 	{
 		super.waitForInput( options );
-		if (this.toPrint.length > 0 || this.awi.utilities.isObjectEmpty(this.toReply))
+		if (this.toPrint.length > 0 || !this.awi.utilities.isObjectEmpty(this.toReply))
 		{
             var message = {
                 text: this.toPrint.join(''),
@@ -208,6 +206,50 @@ class EditorWebSocket extends EditorBase
 			}
 		}
 	}
+    async command_createAccount( parameters, message )
+    {
+	    if ( this.userName != parameters.userName )
+		    return this.replyError( this.newError( 'awi:illegal-value', { value: parameters.userName } ), message );
+        var config = this.awi.configuration.checkUserConfig( this.userName );
+        if ( config )
+            return this.replyError( this.newError( 'awi:account-already-exist', { value: this.userName } ) );
+
+	    config = this.awi.configuration.getNewUserConfig();
+	    config.firstName = parameters.firstName;
+	    config.lastName = parameters.lastName;
+	    config.fullName = parameters.firstName + ' ' + parameters.lastName;
+        config.userName = parameters.userName;
+        config.email = parameters.email;
+        config.country = parameters.country;
+        config.language = parameters.language;
+        await this.awi.configuration.setNewUserConfig( config.userName.toLowerCase(), config );
+        var answer = await this.awi.configuration.saveConfigs();
+        if ( answer.isSuccess() )
+            return this.replySuccess( this.newAnswer( { userName: parameters.userName } ), message );
+        return this.replyError( this.newError( 'awi:error-when-creating-user', { value: parameters.userName } ), message );
+    }
+    async command_login( parameters, message )
+    {
+        if ( this.userName != parameters.userName )
+            return this.replyError( this.newError( 'awi:illegal-value', { value: parameters.userName } ), message );
+        var answer = await this.awi.callConnectors( [ 'setUser', '*', { userName: parameters.userName } ], {}, { editor: this } );
+        if ( answer.isSuccess() )
+        {
+            this.awi.editor.print( [
+                '<BR>', 
+                'awi:user-changed:iwa', 
+                '------------------------------------------------------------------' ],
+                    { user: 'information', 
+                    userName: parameters.userName,
+                    newLine: true, prompt: false } );
+            this.command_prompt( {
+                prompt: 'Hello Awi... Could you first say hello to the user ' + 
+                parameters.userName + ' then invent a funny joke about programming chores?'
+            } );
+            return this.replySuccess( answer, message );
+        }
+        return this.replyError( this.newError( 'awi:error-when-logging-in', { value: parameters.userName } ), message );
+    }
     async command_newProject( parameters, message )
     {
         var answer = await this.command_setMode( parameters );

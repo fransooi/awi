@@ -1,7 +1,11 @@
 {
-  firstName: francois
-  lastName: lionet
-  fullName: francois lionet
+  firstName: Francois
+  lastName: Lionet
+  fullName: Francois Lionet
+  userName: fran
+  email: ""
+  country: ""
+  language: ""
   persona: awi
   paths:
   {
@@ -121,7 +125,7 @@
   }
   takeNote:
   [
-    Please take note: you are talking to {firstName}.
+    Please take note: you are talking to {userName}.
     
       '''
 
