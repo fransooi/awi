@@ -52,7 +52,14 @@ function getArguments()
             { name: 'connectors/awi/configuration', config: { priority: 99 }, options: {} },
             { name: 'connectors/awi/time', config: { priority: 99  }, options: {} },
             { name: 'connectors/editor/editor', config: { priority: 99 }, options: { default: 'commandline', config: {} } },
-            { name: 'connectors/network/websocketserver', config: { priority: 99 }, options: {} },
+            { name: 'connectors/network/websocketserver', config: { priority: 99 }, options: { 
+				templatesPath: 'D:/Awi-Templates' 
+			} },
+			{ name: 'connectors/network/httpserver', config: { priority: 98 }, options: {  
+				port: 3333,
+				rootDirectory: 'D:/Awi-Data/public',
+				enableHttps: false,
+			} },
             { name: 'bubbles/awi/*', config: {}, options: {} },
             { name: 'souvenirs/awi/*', config: {}, options: {} },
             { name: 'memories/awi/*', config: {}, options: {} },

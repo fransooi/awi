@@ -40,6 +40,7 @@ class ConnectorWebSocketServer extends ConnectorBase
 	async connect( options )
 	{
 		super.connect( options );
+		this.templatesPath = options.templatesPath || this.awi.system.getEnginePath() + '/connectors/projects';
 		if ( !this.wsServer )
 		{
 			var self = this;
@@ -134,13 +135,13 @@ class ConnectorWebSocketServer extends ConnectorBase
                 { name: 'bubbles/awi/*', config: {}, options: {} },
                 { name: 'souvenirs/awi/*', config: {}, options: {} },
                 { name: 'memories/awi/*', config: {}, options: {} },
-                { name: 'connectors/language/javascript', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/stos', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/amos1_3', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/amosPro', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/javascript', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/phaser', config: { priority: 98 }, options: {} },
-				{ name: 'connectors/project/c64', config: { priority: 98 }, options: {} },
+				{ name: 'connectors/language/javascript', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/stos', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/amos1_3', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/amosPro', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/javascript', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/phaser', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
+				{ name: 'connectors/project/c64', config: { priority: 98 }, options: { templatesPath: this.templatesPath } },
 				{ name: 'connectors/awi/parser', config: { priority: 97 }, options: {} },
                 { name: 'connectors/awi/persona', config: { priority: 96 }, options: {} },
                 { name: 'connectors/awi/prompt', config: { priority: 95 }, options: {} },

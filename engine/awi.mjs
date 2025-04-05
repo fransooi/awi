@@ -213,6 +213,17 @@ export default class Awi extends Base
         }
         return result;
     }
+    async callParentConnector( name, functionName, argsIn )
+    {
+        var awi = this;
+        while ( awi.awi )
+        {
+            var awi = awi.awi;
+            if ( awi[ name ] && awi[ name ][ functionName ] )
+                return await awi[ name ][ functionName ]( argsIn );
+        }
+        return this.newError( 'awi:connector-not-found', { value: name } );
+    }
     async callConnectors( argsIn = {}, basket = {}, control )
     {
         var errors = [], error, answer = {};

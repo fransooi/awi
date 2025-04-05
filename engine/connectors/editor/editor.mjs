@@ -151,4 +151,11 @@ class ConnectorEditor extends ConnectorBase
         else
             console.error( 'No current editor to wait for input' );
     }
+    sendMessage( command, parameters, callback )
+    {
+        if ( this.current )
+            this.current.sendMessage( command, parameters, callback );
+        else
+            console.error( 'No current editor to send message' );
+    }    
 }

@@ -1,7 +1,6 @@
 export const SERVERCOMMANDS = {
     CONNECT: 'connect',
     PROMPT: 'prompt',
-    SET_MODE: 'setMode',
     NEW_PROJECT: 'newProject',
     OPEN_PROJECT: 'openProject',
     SAVE_PROJECT: 'saveProject',
@@ -19,5 +18,7 @@ export const SERVERCOMMANDS = {
     MOVE_FOLDER: 'moveFolder',
     CREATE_ACCOUNT: 'createAccount',
     LOGIN: 'login',
-  };
-   
+    GET_TEMPLATES: 'getTemplates',
+    RELOAD_FILE: 'reloadFile',
+    GET_PROJECT_LIST: 'getProjectList'
+};

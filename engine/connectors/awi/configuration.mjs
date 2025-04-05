@@ -65,14 +65,6 @@ class ConnectorConfiguration extends ConnectorBase
 		var answer = await this.loadConfigs();
         return this.setConnected( answer.isSuccess() );
     }
-    setServerUrl( url )
-    { 
-        this.serverUrl = url;
-    }
-    getServerUrl()
-    { 
-        return this.serverUrl;
-    }
 	isUserLogged()
 	{
 		return this.user.length > 0;
@@ -248,7 +240,6 @@ class ConnectorConfiguration extends ConnectorBase
 				case 'system':
 					this.configs[ 'system' ] =
 					{
-						serverUrl: 'ws://194.110.192.59:8765',
 						prompts:
 						{
 							user: '. ',
@@ -577,14 +568,6 @@ class ConnectorConfiguration extends ConnectorBase
 	setVerbose( verbose )
 	{
 		this.getConfig( 'user' ).verbose = Math.max( Math.min( 3, verbose ), 1 );
-	}
-	getServerUrl()
-	{
-		if ( this.getConfig( 'system' ).directConnection )
-			return;
-		if ( this.getConfig( 'user' ).localServer )
-			return 'ws://localhost:8765';
-		return this.configs[ 'system' ].serverUrl;
 	}
 	getSystem()
 	{

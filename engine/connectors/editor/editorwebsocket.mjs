@@ -46,13 +46,17 @@ class EditorWebSocket extends EditorBase
         // Find all languages available in this server
         this.languageMode='';
         this.projectConnectors=[];
-        this.projectConnector=null;
+        this.lastMode = '';
 	}
     async connect(options, message)
     {
         var answer = await this.awi.callConnectors( [ 'isProjectConnector', 'project', { } ] );
         if ( answer.isSuccess() )
+        {
             this.projectConnectors=answer.data;
+            for( var l in this.projectConnectors )
+                this.projectConnectors[ l ].self.setEditor( this );
+        }
         this.reply( { handle: this.handle, user: this.userName }, message );
         this.waitForInput();
         //this.command_prompt( { prompt: this.userName }, message );
@@ -154,10 +158,12 @@ class EditorWebSocket extends EditorBase
                 this.awi.awi.editor.print( text, { user: 'awi' } );
                 return this[ 'command_' + message.command ]( message.parameters, message );
             }
-            else if ( this.projectConnector && this.projectConnector[ 'command_' + message.command ] )
+            else
             {
                 this.awi.awi.editor.print( text, { user: 'awi' } );
-                return this.projectConnector[ 'command_' + message.command ]( message.parameters, message, this );
+                if ( message.parameters.mode && this.projectConnectors[ message.parameters.mode ] )
+                    return this.projectConnectors[ message.parameters.mode ].self.command( message, this );
+                return this.replyError( this.newError( 'awi:mode-not-found', { value: parameters.mode } ), message );
             }
         } 
         catch( e ) 
@@ -249,31 +255,5 @@ class EditorWebSocket extends EditorBase
             return this.replySuccess( answer, message );
         }
         return this.replyError( this.newError( 'awi:error-when-logging-in', { value: parameters.userName } ), message );
-    }
-    async command_newProject( parameters, message )
-    {
-        var answer = await this.command_setMode( parameters );
-        if (answer.isError())
-            return this.replyError( answer, message );
-        var answer = await this.projectConnector.command_newProject( parameters );
-        if (answer.isError())
-            return this.replyError( answer, message );
-        return this.replySuccess( answer, message );
-    }
-    async command_setMode( parameters, message )
-    {
-        if ( parameters.mode == this.languageMode )
-            return this.replySuccess( this.newAnswer( parameters.mode ), message );
-        for( var l in this.projectConnectors )
-        {
-            if ( l == parameters.mode )
-            {
-                this.languageMode = parameters.mode;
-                this.projectConnector = this.projectConnectors[l].self;
-                this.projectConnector.setEditor( this );
-                return this.replySuccess( this.newAnswer( parameters.mode ), message );
-            }
-        }
-        return this.replyError( this.newError( 'awi:language-not-found', { value: parameters.mode } ), message );
     }
 }

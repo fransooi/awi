@@ -622,4 +622,8 @@ class ConnectorFiles extends ConnectorBase
 		}
 		return result;
 	}
+	convertToFileName( name )
+	{
+		return name.replace( /[^a-zA-Z0-9]/g, "_" );
+	}
 }

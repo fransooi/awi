@@ -11,19 +11,33 @@ export default class ConnectorProject extends ConnectorBase
 		this.className = 'ConnectorProject';
         this.group = 'project';    
 		this.version = '0.5';
-        this.projectsPath = awi.system.getEnginePath() + '/data/projects';
-        this.templatePath = awi.system.getEnginePath() + '/connectors/' + this.group;
+        this.projectsPath = '';
+        this.serverUrl = 'http://localhost:3333';
+        this.projectsUrl = '/awi-projects'; 
+        this.templatesPath = this.awi.system.getEnginePath() + '/connectors/' + this.group;
 	}
 	async connect( options )
 	{
 		super.connect( options );
-        this.commandMap = {};
-        for ( var c in SERVERCOMMANDS ){
-            if ( this[ 'command_' + SERVERCOMMANDS[ c ] ] )
-                this.commandMap[ c ] = this[ 'command_' + SERVERCOMMANDS[ c ] ];
-        }
-        return this.setConnected( true );
-	}
+       this.commandMap = {};
+       for ( var c in SERVERCOMMANDS ){
+          if ( this[ 'command_' + SERVERCOMMANDS[ c ] ] )
+              this.commandMap[ c ] = this[ 'command_' + SERVERCOMMANDS[ c ] ];
+       }
+       if ( options.templatesPath )
+           this.templatesPath = options.templatesPath;
+       if ( options.projectPath )
+           this.projectsPath = options.projectPath;
+       else
+       {
+           var path = await this.awi.callParentConnector( 'httpServer', 'getRootDirectory', {} );
+           if ( path )
+               this.projectsPath = path + '/projects';
+           else
+               this.projectsPath = this.awi.getEnginePath() + '/data/projects';
+       }
+       return this.setConnected( true );
+    }
     async isProjectConnector(args, basket, control)
     {
         var data = {};
@@ -36,6 +50,7 @@ export default class ConnectorProject extends ConnectorBase
     setEditor( editor )
     {
         this.editor = editor;
+        this.userName = editor.userName;
     }
     replyError( error, message, editor )
     {
@@ -60,8 +75,18 @@ export default class ConnectorProject extends ConnectorBase
                 var oldFile = oldFiles[ of ];
                 if ( oldFile.name === file.name )
                 {
-                    parentFiles.push( oldFile );
-                    found = true;
+                    if (file.isDirectory && oldFile.isDirectory)
+                    {
+                        var tempFiles = [];
+                        this.updateTree( file.files, oldFile.files, tempFiles );
+                        oldFile.files = tempFiles;
+                        parentFiles.push( oldFile );
+                        found = true;
+                    } else if (file.isDirectory == oldFile.isDirectory)
+                    {
+                        parentFiles.push( oldFile );
+                        found = true;
+                    }
                     break;
                 }
             }
@@ -90,15 +115,14 @@ export default class ConnectorProject extends ConnectorBase
             }
         }
     }
-    async updateFileTree(oldFiles)
+    async updateFileTree(project)
     {
-        if ( !this.project )
-            return this.newError( 'awi:project-not-found' );
-        var answer = await this.awi.files.getDirectory( this.projectPath, { recursive: true, filters: '*.*', noStats: true, noPaths: true } );
+        var answer = await this.awi.files.getDirectory( project.path, { recursive: true, filters: '*.*', noStats: true, noPaths: true } );
         if ( answer.isError() )
             return answer;
         var newFiles = [];
-        this.updateTree( answer.data, oldFiles, newFiles );
+        this.updateTree( answer.data, project.files, newFiles );
+        this.project.files = newFiles;
         return this.newAnswer( newFiles );
     }
     findFile( path )
@@ -145,11 +169,93 @@ export default class ConnectorProject extends ConnectorBase
         }
         return find( this.project.files, path );
     }
+    async command( message, editor )
+    {
+        if ( this[ 'command_' + message.command ] )
+            return this[ 'command_' + message.command ]( message.parameters, message, editor );
+        return this.replyError( this.newError( 'awi:command-not-found', { value: message.command } ), message, editor );
+    }
+    async command_getTemplates( parameters, message, editor )
+    {
+        var templatesPath = this.templatesPath + '/' + this.token + '/templates';
+        var filter = parameters.filter ? parameters.filter : '*.*';
+        var answer = await this.awi.files.getDirectory( templatesPath, { recursive: false, listDirectories: true, filters: filter, noStats: true } );
+        if ( answer.isError() )
+            return this.replyError( answer, message, editor );
+        var folders = answer.data;
+        var templates = [];
+        for ( var f = 0; f < folders.length; f++ )
+        {
+            var folder = folders[ f ];
+            var description = 'No description';
+            var iconUrl = null;
+            answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
+            if ( answer.isSuccess() )
+                description = answer.data;
+            answer = await this.awi.system.exists( folder.path + '/icon.png' );
+			if ( answer.isSuccess() )
+				iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/icon.png';
+			else
+				iconUrl = this.projectsUrl + '/default-icon.png';
+            templates.push( { name: folder.name, description: description, iconUrl: iconUrl } );
+        }
+        return this.replySuccess( this.newAnswer( templates ), message, editor );
+    }
+    async command_getProjectList( parameters, message, editor )
+    {
+        var projectsPath = this.projectsPath + '/' + this.userName + '/' + this.token;
+        var filter = parameters.filter ? parameters.filter : '*.*';
+        var answer = await this.awi.system.exists( projectsPath );
+        if ( answer.isError() )
+            return this.replySuccess( this.newAnswer( [] ), message, editor );
+        answer = await this.awi.files.getDirectory( projectsPath, { recursive: false, listDirectories: true, filters: filter, noStats: true } );
+        if ( answer.isError() )
+            return this.replyError( answer, message, editor );
+        var folders = answer.data;
+        var projects = [];
+        for ( var f = 0; f < folders.length; f++ )
+        {
+            var folder = folders[ f ];
+            var description = 'No description';
+            var iconUrl;
+            answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
+            if ( answer.isSuccess() )
+                description = answer.data;
+            answer = await this.awi.system.exists( folder.path + '/icon.png' );
+            if ( answer.isSuccess() )
+                iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/icon.png';
+            else
+                iconUrl = this.projectsUrl + '/default-icon.png';
+            // Load the project.json file
+            answer = await this.awi.files.loadJSON( folder.path + '/project.json' );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor);
+            var project = answer.data;
+            var projectInfo = { 
+                name: project.name, 
+                handle: project.handle,
+                url: project.url,
+                description: description, 
+                iconUrl: iconUrl,
+                type: project.type,
+                files: []
+            };
+            if ( parameters.includeFiles )
+            {
+                answer = await this.updateFileTree( project );
+                if ( answer.isError() )
+                    return this.replyError( answer, message, editor );
+                projectInfo.files = answer.data;
+            }
+            projects.push( projectInfo );
+        }
+        return this.replySuccess( this.newAnswer( projects ), message, editor );
+    }
     async command_newProject( parameters, message, editor )
     {
         // Create the directory
-        var projectHandle = this.awi.utilities.replaceStringInText( parameters.name, ' ', '_' );
-        var projectPath = this.projectsPath + '/' + this.awi.configuration.user + '/' + this.token + '/' + projectHandle;
+        var projectHandle = this.awi.files.convertToFileName( parameters.name );
+        var projectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + projectHandle;
         if ( this.awi.system.exists( projectPath ).isSuccess() )
         {
             if ( !parameters.overwrite )
@@ -163,10 +269,10 @@ export default class ConnectorProject extends ConnectorBase
         // Load the template...
         if ( parameters.template )
         {
-            var templatePath = this.templatePath + '/' + this.token + '/templates/' + parameters.template;
-            if ( this.awi.system.exists( templatePath ).isSuccess() ){
+            var templatesPath = this.templatesPath + '/' + this.token + '/templates/' + parameters.template;
+            if ( this.awi.system.exists( templatesPath ).isSuccess() ){
                 // Copy all files from template to project
-                answer = await this.awi.files.copyDirectory( templatePath, projectPath );
+                answer = await this.awi.files.copyDirectory( templatesPath, projectPath );
                 if ( answer.isError() )
                     return this.replyError(answer, message, editor );
             }
@@ -181,6 +287,8 @@ export default class ConnectorProject extends ConnectorBase
         this.project = {
             name: parameters.name,
             handle: projectHandle,
+            path: projectPath,
+            url: this.serverUrl + '/projects/' + this.userName + '/' + this.token + '/' + projectHandle,
             template: parameters.template,
             type: this.token,
             files: []
@@ -190,10 +298,9 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree to add project.json
-        answer = await this.updateFileTree( [] );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
         // Save updated project.json
         answer = await this.awi.files.saveJSON( projectPath + '/project.json', this.project );
         if ( answer.isError() )
@@ -201,10 +308,10 @@ export default class ConnectorProject extends ConnectorBase
         // Returns the project
         return this.replySuccess(this.newAnswer( this.project ), message, editor);
     }
-    async command_loadProject( parameters, message, editor )
+    async command_openProject( parameters, message, editor )
     {
-        // Project exists?
-        var projectPath = this.projectsPath + '/' + this.awi.configuration.user + '/' + this.token + '/' + parameters.projectHandle;
+        var projectHandle = parameters.handle || this.awi.files.convertToFileName( parameters.name );
+        var projectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + projectHandle;
         if ( !this.awi.system.exists( projectPath ).isSuccess() )
             return this.replyError(this.newError( 'awi:project-not-found', parameters.projectHandle ), message, editor);
         // Load the project.json file
@@ -213,7 +320,7 @@ export default class ConnectorProject extends ConnectorBase
             return this.replyError(answer, message, editor);
         this.project = answer.data;
         // Update file tree to current files
-        answer = await this.updateFileTree( [] );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
         this.project.files = answer.data;
@@ -235,7 +342,7 @@ export default class ConnectorProject extends ConnectorBase
 
         // Create the directory
         var projectHandle = this.awi.utilities.replaceStringInText( parameters.name, ' ', '_' );
-        var projectPath = this.projectsPath + '/' + this.awi.configuration.user + '/' + this.token + '/' + projectHandle;
+        var projectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + projectHandle;
         if ( this.awi.system.exists( projectPath ).isSuccess() )
             return this.replyError(this.newError( 'awi:project-exists', parameters.name ), message, editor );
         // Create new project directory
@@ -304,7 +411,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;
@@ -340,7 +447,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;
@@ -394,7 +501,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;
@@ -411,7 +518,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;
@@ -432,7 +539,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;
@@ -449,7 +556,7 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = await this.updateFileTree( this.project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         this.project.files = answer.data;

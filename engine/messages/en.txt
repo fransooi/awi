@@ -63,6 +63,11 @@ awi:project-not-found                   Project ~{value}~ not found
 awi:error-when-creating-user            Error when creating user ~{value}~
 awi:illegal-value                       Illegal parameter ~{value}~
 awi:account-already-exist               Account ~{value}~ already exists.
+awi:server-start                        Server ~{name}~ started on port ~{port}~
+awi:server-stop                         Server ~{name}~ stopped
+awi:server-error                        Error starting server ~{name}~ on port ~{port}~
+awi:server-quit                         Server ~{name}~ quit
+awi:server-quit-error                   Error quiting server ~{name}~
 
 
 
