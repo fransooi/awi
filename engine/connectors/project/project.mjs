@@ -13,7 +13,8 @@ export default class ConnectorProject extends ConnectorBase
 		this.version = '0.5';
         this.projectsPath = '';
         this.serverUrl = 'http://localhost:3333';
-        this.projectsUrl = '/awi-projects'; 
+        this.projectsUrl = 'http://localhost:3333/projects'; 
+        this.templatesUrl = 'http://localhost:3333/templates'; 
         this.templatesPath = this.awi.system.getEnginePath() + '/connectors/' + this.group;
 	}
 	async connect( options )
@@ -189,14 +190,14 @@ export default class ConnectorProject extends ConnectorBase
             var folder = folders[ f ];
             var description = 'No description';
             var iconUrl = null;
-            answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
+            answer = await this.awi.files.loadIfExist( folder.path + '/description.md', { encoding: 'utf8' } );
             if ( answer.isSuccess() )
                 description = answer.data;
-            answer = await this.awi.system.exists( folder.path + '/icon.png' );
+            answer = await this.awi.system.exists( folder.path + '/thumbnail.png' );
 			if ( answer.isSuccess() )
-				iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/icon.png';
+				iconUrl = this.templatesUrl + '/' + this.token + '/templates/' + folder.name + '/thumbnail.png';
 			else
-				iconUrl = this.projectsUrl + '/default-icon.png';
+				iconUrl = this.templatesUrl + '/default-thumbnail.png';
             templates.push( { name: folder.name, description: description, iconUrl: iconUrl } );
         }
         return this.replySuccess( this.newAnswer( templates ), message, editor );
@@ -221,11 +222,11 @@ export default class ConnectorProject extends ConnectorBase
             answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
             if ( answer.isSuccess() )
                 description = answer.data;
-            answer = await this.awi.system.exists( folder.path + '/icon.png' );
-            if ( answer.isSuccess() )
-                iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/icon.png';
-            else
-                iconUrl = this.projectsUrl + '/default-icon.png';
+            answer = await this.awi.system.exists( folder.path + '/thumbnail.png' );
+			if ( answer.isSuccess() )
+                iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + folder.name + '/thumbnail.png';
+			else
+                iconUrl = this.templatesUrl + '/default-thumbnail.png';
             // Load the project.json file
             answer = await this.awi.files.loadJSON( folder.path + '/project.json' );
             if ( answer.isError() )

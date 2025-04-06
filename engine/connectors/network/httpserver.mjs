@@ -88,9 +88,31 @@ class ConnectorHttpServer extends ConnectorBase
                 frameguard: false // Disable X-Frame-Options to allow embedding in iframes
             }));
             
-            // Serve static files from root directory
+            // Serve static files from root directory with proper MIME types
             const rootDir = path.resolve(this.serverConfig.rootDirectory);
-            this.app.use(express.static(rootDir));
+            this.app.use(express.static(rootDir, {
+                setHeaders: (res, path) => {
+                    // Handle Vite asset files with proper MIME types
+                    if (path.endsWith('.css')) {
+                        res.setHeader('Content-Type', 'text/css');
+                    } else if (path.endsWith('.js')) {
+                        res.setHeader('Content-Type', 'application/javascript');
+                    } else if (path.match(/\.(jpe?g|png|gif|svg|webp)$/i)) {
+                        const ext = path.split('.').pop().toLowerCase();
+                        const mimeTypes = {
+                            'jpg': 'image/jpeg',
+                            'jpeg': 'image/jpeg',
+                            'png': 'image/png',
+                            'gif': 'image/gif',
+                            'svg': 'image/svg+xml',
+                            'webp': 'image/webp'
+                        };
+                        if (mimeTypes[ext]) {
+                            res.setHeader('Content-Type', mimeTypes[ext]);
+                        }
+                    }
+                }
+            }));
             
             // Create HTTP server
             this.httpServer = http.createServer(this.app);

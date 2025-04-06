@@ -53,7 +53,7 @@ function getArguments()
             { name: 'connectors/awi/time', config: { priority: 99  }, options: {} },
             { name: 'connectors/editor/editor', config: { priority: 99 }, options: { default: 'commandline', config: {} } },
             { name: 'connectors/network/websocketserver', config: { priority: 99 }, options: { 
-				templatesPath: 'D:/Awi-Templates' 
+				templatesPath: 'D:/Awi-Data/public/templates'
 			} },
 			{ name: 'connectors/network/httpserver', config: { priority: 98 }, options: {  
 				port: 3333,
