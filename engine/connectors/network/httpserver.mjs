@@ -77,6 +77,54 @@ class ConnectorHttpServer extends ConnectorBase
             // Create Express app
             this.app = express();
             
+            // Add request/response logging middleware
+            this.app.use((req, res, next) => {
+                const startTime = Date.now();
+                const requestId = Math.random().toString(36).substring(2, 10);
+                
+                // Log request
+                console.log(`[${new Date().toISOString()}] [${requestId}] REQUEST: ${req.method} ${req.url}`);
+                if (Object.keys(req.query).length > 0) {
+                    console.log(`[${requestId}] Query params:`, req.query);
+                }
+                
+                // Capture the original methods to intercept response
+                const originalSend = res.send;
+                const originalJson = res.json;
+                const originalEnd = res.end;
+                
+                // Override send method to log response
+                res.send = function(body) {
+                    const responseTime = Date.now() - startTime;
+                    console.log(`[${new Date().toISOString()}] [${requestId}] RESPONSE: ${res.statusCode} (${responseTime}ms)`);
+                    if (body && typeof body === 'string' && body.length < 1000) {
+                        console.log(`[${requestId}] Body: ${body.substring(0, 500)}${body.length > 500 ? '...' : ''}`);
+                    }
+                    return originalSend.apply(this, arguments);
+                };
+                
+                // Override json method to log response
+                res.json = function(body) {
+                    const responseTime = Date.now() - startTime;
+                    console.log(`[${new Date().toISOString()}] [${requestId}] RESPONSE: ${res.statusCode} (${responseTime}ms)`);
+                    if (body) {
+                        console.log(`[${requestId}] Body:`, typeof body === 'object' ? JSON.stringify(body).substring(0, 500) : body);
+                    }
+                    return originalJson.apply(this, arguments);
+                };
+                
+                // Override end method to catch responses without body
+                res.end = function(chunk) {
+                    if (!res.headersSent) {
+                        const responseTime = Date.now() - startTime;
+                        console.log(`[${new Date().toISOString()}] [${requestId}] RESPONSE: ${res.statusCode} (${responseTime}ms)`);
+                    }
+                    return originalEnd.apply(this, arguments);
+                };
+                
+                next();
+            });
+            
             // Apply middleware
             if (this.serverConfig.cors) {
                 this.app.use(cors());

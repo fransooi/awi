@@ -13,9 +13,10 @@ export default class ConnectorProject extends ConnectorBase
 		this.version = '0.5';
         this.projectsPath = '';
         this.serverUrl = 'http://localhost:3333';
-        this.projectsUrl = 'http://localhost:3333/projects'; 
-        this.templatesUrl = 'http://localhost:3333/templates'; 
+        this.projectsUrl = '/awi-projects'; //http://localhost:3333/projects'; 
+        this.templatesUrl = '/awi-templates'; //http://localhost:3333/templates'; 
         this.templatesPath = this.awi.system.getEnginePath() + '/connectors/' + this.group;
+        this.projects = {};
 	}
 	async connect( options )
 	{
@@ -123,13 +124,11 @@ export default class ConnectorProject extends ConnectorBase
             return answer;
         var newFiles = [];
         this.updateTree( answer.data, project.files, newFiles );
-        this.project.files = newFiles;
+        project.files = newFiles;
         return this.newAnswer( newFiles );
     }
-    findFile( path )
+    findFile( project, path )
     {
-        if ( !this.project )
-            return null;
         function find( parent, path )
         {
             for ( var f = 0; f < parent.files.length; f++ )
@@ -146,12 +145,10 @@ export default class ConnectorProject extends ConnectorBase
             }
             return null;
         }
-        return find( this.project.files, path );
+        return find( project, path );
     }
-    findFileParent( path )
+    findFileParent( project, path )
     {
-        if ( !this.project )
-            return null;
         function find( parent, path )
         {
             for ( var f = 0; f < parent.files.length; f++ )
@@ -168,14 +165,38 @@ export default class ConnectorProject extends ConnectorBase
             }
             return null;
         }
-        return find( this.project.files, path );
+        return find( project, path );
     }
+    findFolder( project, path )
+    {
+        function find( parent, path )
+        {
+            for ( var f = 0; f < parent.files.length; f++ )
+            {
+                var file = parent.files[f];
+                if ( file.path == path && file.isDirectory )
+                    return parent;
+                if ( file.isDirectory )
+                {
+                    var found = find( file, path );
+                    if ( found )
+                        return found;
+                }
+            }
+            return null;
+        }
+        return find( project, path );
+    }
+
     async command( message, editor )
     {
         if ( this[ 'command_' + message.command ] )
             return this[ 'command_' + message.command ]( message.parameters, message, editor );
         return this.replyError( this.newError( 'awi:command-not-found', { value: message.command } ), message, editor );
     }
+
+    // PROJECTS COMMANDS
+    ////////////////////////////////////////////////////////////////////////////////////
     async command_getTemplates( parameters, message, editor )
     {
         var templatesPath = this.templatesPath + '/' + this.token + '/templates';
@@ -246,7 +267,7 @@ export default class ConnectorProject extends ConnectorBase
                 answer = await this.updateFileTree( project );
                 if ( answer.isError() )
                     return this.replyError( answer, message, editor );
-                projectInfo.files = answer.data;
+                projectInfo.files = project.files;
             }
             projects.push( projectInfo );
         }
@@ -280,12 +301,9 @@ export default class ConnectorProject extends ConnectorBase
             else        
                 return this.replyError(this.newError( 'awi:template-not-found', parameters.template ), message, editor );
         }
-        this.projectName = parameters.name;
-        this.projectHandle = projectHandle;
-        this.projectPath = projectPath;
 
         // Create project
-        this.project = {
+        var project = {
             name: parameters.name,
             handle: projectHandle,
             path: projectPath,
@@ -295,19 +313,21 @@ export default class ConnectorProject extends ConnectorBase
             files: []
         }
         // Save project configuration
-        answer = await this.awi.files.saveJSON( projectPath + '/project.json', this.project );
+        answer = await this.awi.files.saveJSON( projectPath + '/project.json', project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Update file tree to add project.json
-        answer = await this.updateFileTree( this.project );
+        answer = await this.updateFileTree( project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Save updated project.json
-        answer = await this.awi.files.saveJSON( projectPath + '/project.json', this.project );
+        answer = await this.awi.files.saveJSON( projectPath + '/project.json', project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
+        // Set as opened project
+        this.projects[ projectHandle ] = project;
         // Returns the project
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        return this.replySuccess(this.newAnswer( project ), message, editor);
     }
     async command_openProject( parameters, message, editor )
     {
@@ -319,265 +339,309 @@ export default class ConnectorProject extends ConnectorBase
         var answer = await this.awi.files.loadJSON( projectPath + '/project.json' );
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
-        this.project = answer.data;
         // Update file tree to current files
-        answer = await this.updateFileTree( this.project );
+        answer = await this.updateFileTree( project );
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer(this.project), message, editor);
+        return this.replySuccess(this.newAnswer(project), message, editor);
     }
     async command_saveProject( parameters, message, editor )
     {
-        // Save project configuration
-        var answer = await this.awi.files.saveJSON( this.projectPath + '/project.json', this.project );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError( this.newError( 'awi:project-not-open' ) );
+        var projectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle;
+        var answer = await this.awi.files.saveJSON( projectPath + '/project.json', this.projects[ parameters.handle ] );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        return this.replySuccess(this.newAnswer(true), message, editor);
     }
     async command_renameProject( parameters, message, editor )
     {
         // Rename project
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-found' ), message, editor );
-
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
+    
         // Create the directory
-        var projectHandle = this.awi.utilities.replaceStringInText( parameters.name, ' ', '_' );
-        var projectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + projectHandle;
-        if ( this.awi.system.exists( projectPath ).isSuccess() )
-            return this.replyError(this.newError( 'awi:project-exists', parameters.name ), message, editor );
+        var oldProjectHandle = parameters.handle;
+        var oldProjectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + oldProjectHandle;
+        var newProjectHandle = this.awi.files.convertToFileName( parameters.newName );
+        var newProjectPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + newProjectHandle;
+        if ( this.awi.system.exists( newProjectPath ).isSuccess() )
+            return this.replyError(this.newError( 'awi:project-exists', parameters.newName ), message, editor );
         // Create new project directory
-        var answer = await this.awi.files.createDirectories( projectPath );
+        var answer = await this.awi.files.createDirectories( newProjectPath );
         if ( answer.isError() )
-            return this.replyError(answer, message, editor );
+            return this.replyError(answer, message, editor);
         // Copy project files
-        answer = await this.awi.files.copyDirectory( this.projectPath, projectPath );
+        answer = await this.awi.files.copyDirectory( oldProjectPath, newProjectPath );
         if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Save new project configuration
-        this.projectName = parameters.name;
-        this.projectHandle = projectHandle;
-        this.projectPath = projectPath;
-        this.project.name = parameters.name;
-        this.project.handle = projectHandle;
-        answer = await this.awi.files.saveJSON( projectPath + '/project.json', this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
+            return this.replyError(answer, message, editor);
         // Delete old project directory
-        answer = await this.awi.files.deleteDirectory( this.projectPath, { keepRoot: false, recursive: true } );
+        answer = await this.awi.files.deleteDirectory( oldProjectPath, { keepRoot: false, recursive: true } );
         if ( answer.isError() )
-            return this.replyError(answer, message, editor );
+            return this.replyError(answer, message, editor);
+        // Update new project configuration
+        answer = await this.awi.files.loadJSON( newProjectPath + '/project.json' );
+        if ( answer.isError() )
+            return this.replyError(answer, message, editor);
+        var newProject = answer.data;
+        newProject.name = parameters.newName;
+        newProject.handle = newProjectHandle;
+        newProject.url = this.serverUrl + '/projects/' + this.userName + '/' + this.token + '/' + newProjectHandle;
+        newProject.files = [];
+        answer = await this.updateFileTree( newProject );
+        if ( answer.isError() )
+            return this.replyError(answer, message, editor);
+        answer = await this.awi.files.saveJSON( newProjectPath + '/project.json', newProject );
+        if ( answer.isError() )
+            return this.replyError(answer, message, editor);
+        // Update project handle
+        this.projects[ newProjectHandle ] = newProject;
+        this.projects[ oldProjectHandle ] = null;
         // Returns the project
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        return this.replySuccess(this.newAnswer( newProject ), message, editor);
     }
     async command_deleteProject( parameters, message, editor )
     {
         // Delete project
-        if ( !this.project )
+        if ( !parameters.handle )
             return this.replyError(this.newError( 'awi:project-not-found' ), message, editor );
         // Delete project directory
-        var answer = await this.awi.files.deleteDirectory( this.projectPath, { keepRoot: true, recursive: true } );
+        var answer = await this.awi.files.deleteDirectory( this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle, { keepRoot: true, recursive: true } );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
         // Reset project
-        this.project = null;
-        this.projectName = null;
-        this.projectHandle = null;
-        this.projectPath = null;
+        this.projects[ parameters.handle ] = null;
         return this.replySuccess(this.newAnswer( true ), message, editor);
+    }
+
+    // FILE COMMANDS 
+    //////////////////////////////////////////////////////////////////////////////
+    async command_newFile( parameters, message, editor )
+    {
+        // Project exists?
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
+        
+        // Create the file
+        var project = this.projects[ parameters.handle ];
+        if ( !this.findFile( project, parameters.path ) )
+        {
+            var content = '';
+            var path = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle + '/' + parameters.path;
+            var answer = await this.awi.system.writeFile( path, content, { encoding: 'utf8' } );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            var answer = await this.updateFileTree( project );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            var file = this.findFile( project, parameters.path );
+            return this.replySuccess(this.newAnswer( { file: file, data: content } ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:file-exists' ), message, editor);
     }
     async command_loadFile( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
-        // Load the file depending on its mime type
-        var file = this.findFile( parameters.path );
-        if ( !file )
-            return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
-        var answer = await this.awi.system.readFile( this.projectPath + '/' + file.path );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        return this.replySuccess(this.newAnswer( { file: file, data: answer.data } ), message, editor);
-    }
+        // Load the file
+        var file = this.findFile( this.projects[ parameters.handle ], parameters.path );
+        if ( file )
+        {
+            var answer = await this.awi.system.readFile( file.path, { encoding: 'utf8' } );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( { file: file, data: answer.data } ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
+}
     async command_saveFile( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Save the file
-        var answer = await this.awi.system.writeFile( this.projectPath + '/' + parameters.path, parameters.data );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var file = this.findFile( this.projects[ parameters.handle ], parameters.path );
+        if ( file )
+        {
+            var answer = await this.awi.system.writeFile( file.path, parameters.data, { encoding: 'utf8' } );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( { file: file, data: parameters.data } ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:file-not-found' ), message, editor);
     }
     async command_renameFile( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Find the file in the tree
-        var file = this.findFile( parameters.path );
-        if ( !file )
-            return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
-        // Rename the file
-        var answer = await this.awi.system.rename( this.projectPath + '/' + parameters.path, this.projectPath + '/' + parameters.newPath );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        file.name = this.awi.system.basename( parameters.newPath );
-        file.path = parameters.newPath;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var file = this.findFile( this.projects[ parameters.handle ], parameters.path );
+        if ( file )
+        {
+            // Rename the file
+            var newName = this.awi.system.basename( parameters.newPath );
+            var newPath = this.awi.system.dirname( parameters.newPath ) + '/' + newName;
+            var answer = await this.awi.system.rename( file.path, newPath );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            // Update file tree
+            file.name = newName;
+            file.path = newPath;
+            return this.replySuccess(this.newAnswer(true), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
     }
     async command_deleteFile( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Delete the file
-        var answer = await this.awi.files.delete( this.projectPath + '/' + parameters.path );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var file = this.findFile( this.projects[ parameters.handle ], parameters.path );
+        if ( file )
+        {
+            var answer = await this.awi.system.delete( file.path );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( true ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
     }
     async command_moveFile( parameters, message, editor )
     {
-        // Project exists? 
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
-        
+        // Project exists?
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+        return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
+    
         // Find the file in the tree
-        var file = this.findFile( parameters.path );
-        if ( !file )
-            return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
-        var oldParent = this.findFileParent( parameters.path );
-        var newParentPath = this.awi.system.dirname( parameters.newPath );
-        var newParent = this.findFile( newParentPath );
-        if ( !newParent )
-            return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
-
-        // Move the file
-        var answer = await this.awi.system.copyFile( this.projectPath + '/' + parameters.path, this.projectPath + '/' + parameters.newPath );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Delete the old file
-        answer = await this.awi.system.deleteFile( this.projectPath + '/' + parameters.path );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Remove from current parent
-        for ( var f = 0 ; f < oldParent.files.length; f++ )
+        var file = this.findFile( this.projects[ parameters.handle ], parameters.path );
+        if ( file )
         {
-            if ( oldParent.files[f].path == parameters.path )
-            {
-                oldParent.files.splice( f, 1 );
-                break;
-            }
+            var answer = await this.copyFile( file.path, parameters.newPath );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.deleteFile( file.path );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( true ), message, editor);
         }
-        // Add to new parent
-        newParent.files.push( file );
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        return this.replyError(this.newError( 'awi:file-not-found' ), message, editor );
     }
     async command_createFolder( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Create the folder
-        var answer = await this.awi.system.mkdir( this.projectPath + '/' + parameters.path );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var folder = this.findFolder( this.projects[ parameters.handle ], parameters.path );
+        if ( !folder )
+        {
+            var folderPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle + '/' + parameters.path;
+            var answer = await this.awi.system.mkdir( folderPath );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            // Update file tree
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( this.projects[ parameters.handle ] ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:folder-exists' ), message, editor);
     }
     async command_deleteFolder( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Delete the folder
-        var answer = await this.awi.system.rmdir( this.projectPath + '/' + parameters.path );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var folder = this.findFolder( parameters.path );
+        if ( folder )
+        {
+            var answer = await this.awi.files.deleteDirectory( folder.path, { keepRoot: false, recursive: true } );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( this.projects[ parameters.handle ] ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:folder-not-found' ), message, editor );
     }
     async command_renameFolder( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
             return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
         
         // Find the folder in the tree
         var folder = this.findFolder( parameters.path );
-        if ( !folder )
-            return this.replyError(this.newError( 'awi:folder-not-found' ), message, editor );
-        // Rename the folder
-        var answer = await this.awi.system.rename( this.projectPath + '/' + parameters.path, this.projectPath + '/' + parameters.newPath );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        if ( folder )
+        {
+            var newPath = this.awi.system.dirname( parameters.newPath ) + '/' + this.awi.system.basename( parameters.newPath );
+            var answer = await this.awi.system.rename( folder.path, newPath );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor);
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( this.projects[ parameters.handle ] ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:folder-not-found' ), message, editor );
     }
     async command_copyFolder( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
         // Copy the folder
-        var answer = await this.awi.files.copyDirectory( this.projectPath + '/' + parameters.path, this.projectPath + '/' + parameters.newPath );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project );
-        if ( answer.isError() )
-            return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        var folder = this.findFolder( parameters.path );
+        if ( folder )
+        {
+            var newPath = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle + '/' + parameters.newPath;
+            var answer = await this.awi.files.copyDirectory( folder.path, newPath );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+            if ( answer.isError() )
+                return this.replyError(answer, message, editor );
+            return this.replySuccess(this.newAnswer( this.projects[ parameters.handle ] ), message, editor);
+        }
+        return this.replyError(this.newError( 'awi:folder-not-found' ), message, editor);
     }
     async command_moveFolder( parameters, message, editor )
     {
         // Project exists?
-        if ( !this.project )
-            return this.replyError(this.newError( 'awi:project-not-loaded' ), message, editor );
+        if ( !parameters.handle || !this.projects[ parameters.handle ] )
+            return this.replyError(this.newError( 'awi:project-not-open' ), message, editor );
         
-        // Move the folder
-        var answer = await this.awi.system.rename( this.projectPath + '/' + parameters.path, this.projectPath + '/' + parameters.newPath );
+        var answer = this.copyFolder( parameters );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
-        // Update file tree
-        answer = await this.updateFileTree( this.project.files );
+        answer = this.deleteFolder( parameters );
         if ( answer.isError() )
             return this.replyError(answer, message, editor );
-        this.project.files = answer.data;
-        return this.replySuccess(this.newAnswer( this.project ), message, editor);
+        answer = await this.updateFileTree( this.projects[ parameters.handle ] );
+        if ( answer.isError() )
+            return this.replyError(answer, message, editor );
+        return this.replySuccess(this.newAnswer( this.projects[ parameters.handle ] ), message, editor);
     }
 }
