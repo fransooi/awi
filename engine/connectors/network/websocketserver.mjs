@@ -40,11 +40,12 @@ class ConnectorWebSocketServer extends ConnectorBase
 	async connect( options )
 	{
 		super.connect( options );
+		this.port = options.port || 1033;
 		this.templatesPath = options.templatesPath || this.awi.system.getEnginePath() + '/connectors/projects';
 		if ( !this.wsServer )
 		{
 			var self = this;
-			this.wsServer = new WebSocketServer( { port: 1033 } );
+			this.wsServer = new WebSocketServer( { port: this.port } );
 			this.wsServer.on( 'connection', function( ws )
 			{
 				var connection = ws;
@@ -113,6 +114,19 @@ class ConnectorWebSocketServer extends ConnectorBase
 	}
 	async user_connect( connection, message )
 	{
+		if ( message.parameters.debug )
+		{
+			this.templatesUrl = '/awi-templates';
+			this.projectsUrl = '/awi-projects';
+			this.runUrl = 'http://217.154.15.90:3333/projects';
+		}
+		else
+		{
+			this.templatesUrl = 'http://217.154.15.90:3333/templates';
+			this.projectsUrl = 'http://217.154.15.90:3333/projects';
+			this.runUrl = 'http://217.154.15.90:3333/projects';
+		}
+		
         // Create new session of AWI
         var config =
         {
@@ -130,7 +144,10 @@ class ConnectorWebSocketServer extends ConnectorBase
                     connection: connection,
                     parent: this,
                     userName: message.parameters.userName,
-                    connect: false
+                    connect: false,
+					templatesUrl: this.templatesUrl,
+					runUrl: this.runUrl,
+					projectsUrl: this.projectsUrl,
                 }} },
                 { name: 'bubbles/awi/*', config: {}, options: {} },
                 { name: 'souvenirs/awi/*', config: {}, options: {} },
@@ -155,6 +172,9 @@ class ConnectorWebSocketServer extends ConnectorBase
 			this.awi.editor.print('awi:socket-new-connection', { name: message.parameters.userName, user: 'awi' } );
             this.editors[ awi2.editor.current.handle ] = awi2.editor.current;
             this.current = awi2.editor.current;
+			message.parameters.templatesUrl = this.templatesUrl;
+			message.parameters.projectsUrl = this.projectsUrl;
+			message.parameters.runUrl = this.runUrl;
 			this.current.connect( message.parameters, message );
         }
     }

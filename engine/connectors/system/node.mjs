@@ -248,7 +248,21 @@ class ConnectorNode extends ConnectorBase
 		text = HE.unescape( text );
 		return text;
 	}
-	async getSystemInformation( type )
+	checkPathFormat( path )
+	{
+		if ( this.getSystemInformation( 'platform' ) == 'linux' )
+		{
+			if ( path.charAt( 0 ) == '/' )
+				return true;
+		}
+		else if ( this.getSystemInformation( 'platform' ) == 'win32' )
+		{
+			if ( path.charAt( 1 ) == ':' )
+				return true;
+		}
+		return false;
+	}
+	getSystemInformation( type )
 	{
 		switch ( type )
 		{

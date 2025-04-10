@@ -61,7 +61,7 @@ class ConnectorConfiguration extends ConnectorBase
     async connect( options )
     {
 		super.connect( options );
-		this.platform = await this.awi.system.getSystemInformation( 'platform' );
+		this.platform = this.awi.system.getSystemInformation( 'platform' );
 		var answer = await this.loadConfigs();
         return this.setConnected( answer.isSuccess() );
     }
@@ -435,11 +435,11 @@ class ConnectorConfiguration extends ConnectorBase
 			linux: {},
 			android: {},
 			iOS: {}	};
-		var userDir = await this.awi.system.getSystemInformation( 'userDir' );
-		var drives = await this.awi.system.getSystemInformation( 'drives' );
+		var userDir = this.awi.system.getSystemInformation( 'userDir' );
+		var drives = this.awi.system.getSystemInformation( 'drives' );
 		for ( var d = 0; d < drives.length; d++ )
 			drives[ d ] = drives[ d ] + ':/';
-		var platform = await this.awi.system.getSystemInformation( 'platform' );
+		var platform = this.awi.system.getSystemInformation( 'platform' );
 		switch ( platform )
 		{
 			case 'win32':

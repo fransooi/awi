@@ -50,12 +50,14 @@ class EditorWebSocket extends EditorBase
 	}
     async connect(options, message)
     {
+        this.templatesUrl = options.templatesUrl;
+        this.projectsUrl = options.projectsUrl;
         var answer = await this.awi.callConnectors( [ 'isProjectConnector', 'project', { } ] );
         if ( answer.isSuccess() )
         {
             this.projectConnectors=answer.data;
             for( var l in this.projectConnectors )
-                this.projectConnectors[ l ].self.setEditor( this );
+                this.projectConnectors[ l ].self.setEditor( this, options );
         }
         this.reply( { handle: this.handle, user: this.userName }, message );
         this.waitForInput();

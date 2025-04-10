@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "Launch Program",
-            "program": "${workspaceFolder}/engine/simple-node-prompt.mjs",
+            "program": "${workspaceFolder}/engine/linux-node-prompt.mjs",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"

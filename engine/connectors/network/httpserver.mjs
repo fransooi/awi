@@ -169,7 +169,7 @@ class ConnectorHttpServer extends ConnectorBase
             if (this.serverConfig.watchFiles) {
                 this.setupFileWatcher();
             }
-            
+            http://localhost:3333/awi-projects/francois/phaser/Breakout/thumbnail.png          
             // Handle SPA routing (for Vite and other modern frameworks)
             // Send all non-API requests to index.html
             this.app.use((req, res, next) => {
@@ -190,9 +190,10 @@ class ConnectorHttpServer extends ConnectorBase
                 next();
             });
             
-            // Start HTTP server
-            this.httpServer.listen(this.serverConfig.port, () => {                    
-                this.awi.editor.print( `awi:server-start`, { name: 'HTTP server', port: this.serverConfig.port } );
+            // Start HTTP server - listen on all interfaces
+            this.httpServer.listen(this.serverConfig.port, '0.0.0.0', () => {         
+                this.connectedText = this.awi.messages.getMessage( 'awi:server-start', { name: 'HTTP server', port: this.serverConfig.port } );
+                this.awi.editor.print( this.connectedText, { user: 'awi' } );
             });
             
             // Start HTTPS server if enabled

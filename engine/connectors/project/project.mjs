@@ -13,33 +13,36 @@ export default class ConnectorProject extends ConnectorBase
 		this.version = '0.5';
         this.projectsPath = '';
         this.serverUrl = 'http://localhost:3333';
-        this.projectsUrl = '/awi-projects'; //http://localhost:3333/projects'; 
-        this.templatesUrl = '/awi-templates'; //http://localhost:3333/templates'; 
+        this.projectsUrl = 'http://localhost:3333/projects';
+        this.runUrl = 'http://localhost:3333/projects';
+        this.templatesUrl = 'http://localhost:3333/templates';
         this.templatesPath = this.awi.system.getEnginePath() + '/connectors/' + this.group;
         this.projects = {};
 	}
 	async connect( options )
 	{
-		super.connect( options );
-       this.commandMap = {};
-       for ( var c in SERVERCOMMANDS ){
-          if ( this[ 'command_' + SERVERCOMMANDS[ c ] ] )
-              this.commandMap[ c ] = this[ 'command_' + SERVERCOMMANDS[ c ] ];
-       }
-       if ( options.templatesPath )
-           this.templatesPath = options.templatesPath;
-       if ( options.projectPath )
-           this.projectsPath = options.projectPath;
-       else
-       {
-           var path = await this.awi.callParentConnector( 'httpServer', 'getRootDirectory', {} );
-           if ( path )
-               this.projectsPath = path + '/projects';
+	    super.connect( options );
+        this.commandMap = {};
+        for ( var c in SERVERCOMMANDS )
+        {
+            if ( this[ 'command_' + SERVERCOMMANDS[ c ] ] )
+                this.commandMap[ c ] = this[ 'command_' + SERVERCOMMANDS[ c ] ];
+        }
+        if ( options.templatesPath )
+            this.templatesPath = options.templatesPath;
+        if ( options.projectPath )
+            this.projectsPath = options.projectPath;
+        else
+        {
+            var path = await this.awi.callParentConnector( 'httpServer', 'getRootDirectory', {} );
+            if ( path )
+                this.projectsPath = path + '/projects';
            else
                this.projectsPath = this.awi.getEnginePath() + '/data/projects';
        }
        return this.setConnected( true );
     }
+
     async isProjectConnector(args, basket, control)
     {
         var data = {};
@@ -49,10 +52,13 @@ export default class ConnectorProject extends ConnectorBase
         };
         return this.newAnswer( data );
     }
-    setEditor( editor )
+    setEditor( editor, options )
     {
         this.editor = editor;
         this.userName = editor.userName;
+        this.templatesUrl = options.templatesUrl || this.templatesUrl;
+        this.projectsUrl = options.projectsUrl || this.projectsUrl;
+        this.runUrl = options.runUrl || this.runUrl;
     }
     replyError( error, message, editor )
     {
@@ -117,8 +123,22 @@ export default class ConnectorProject extends ConnectorBase
             }
         }
     }
-    async updateFileTree(project)
+    async updateFileTree(project, projectHandle)
     {
+        // If from another platform, enforce reload of the whole tree
+        if ( !this.awi.system.checkPathFormat( project.path ) )
+        {
+            if ( !projectHandle )
+                return this.newError( 'awi:illegal-project-format' );
+            project.path = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + projectHandle;
+            project.files = [];
+        }
+        // Update URL
+        if (projectHandle)
+        {
+            project.url = this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + projectHandle;
+            project.runUrl = this.runUrl + '/' + this.userName + '/' + this.token + '/' + projectHandle;
+        }
         var answer = await this.awi.files.getDirectory( project.path, { recursive: true, filters: '*.*', noStats: true, noPaths: true } );
         if ( answer.isError() )
             return answer;
@@ -240,36 +260,40 @@ export default class ConnectorProject extends ConnectorBase
             var folder = folders[ f ];
             var description = 'No description';
             var iconUrl;
-            answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
-            if ( answer.isSuccess() )
-                description = answer.data;
-            answer = await this.awi.system.exists( folder.path + '/thumbnail.png' );
-			if ( answer.isSuccess() )
-                iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + folder.name + '/thumbnail.png';
-			else
-                iconUrl = this.templatesUrl + '/default-thumbnail.png';
-            // Load the project.json file
-            answer = await this.awi.files.loadJSON( folder.path + '/project.json' );
-            if ( answer.isError() )
-                return this.replyError(answer, message, editor);
-            var project = answer.data;
-            var projectInfo = { 
-                name: project.name, 
-                handle: project.handle,
-                url: project.url,
-                description: description, 
-                iconUrl: iconUrl,
-                type: project.type,
-                files: []
-            };
-            if ( parameters.includeFiles )
+            while( true )
             {
-                answer = await this.updateFileTree( project );
+                answer = await this.awi.files.loadIfExist( folder.path + '/readme.md', { encoding: 'utf8' } );
+                if ( answer.isSuccess() )
+                    description = answer.data;
+                answer = await this.awi.system.exists( folder.path + '/thumbnail.png' );
+                if ( answer.isSuccess() )
+                    iconUrl = this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + folder.name + '/thumbnail.png';
+                else
+                    iconUrl = this.templatesUrl + '/default-thumbnail.png';
+                // Load the project.json file
+                answer = await this.awi.files.loadJSON( folder.path + '/project.json' );
                 if ( answer.isError() )
-                    return this.replyError( answer, message, editor );
-                projectInfo.files = project.files;
+                    break;
+                var project = answer.data;
+                var projectInfo = { 
+                    name: project.name, 
+                    handle: project.handle,
+                    url: this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + project.handle,
+                    description: description, 
+                    iconUrl: iconUrl,
+                    type: project.type,
+                    files: []
+                };
+                if ( parameters.includeFiles )
+                {
+                    answer = await this.updateFileTree( project, project.handle );
+                    if ( answer.isError() )
+                        break;
+                    projectInfo.files = project.files;
+                }
+                projects.push( projectInfo );
+                break;
             }
-            projects.push( projectInfo );
         }
         return this.replySuccess( this.newAnswer( projects ), message, editor );
     }
@@ -307,9 +331,10 @@ export default class ConnectorProject extends ConnectorBase
             name: parameters.name,
             handle: projectHandle,
             path: projectPath,
-            url: this.serverUrl + '/projects/' + this.userName + '/' + this.token + '/' + projectHandle,
+            url: this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + projectHandle,
             template: parameters.template,
             type: this.token,
+            runUrl: this.runUrl + '/' + this.userName + '/' + this.token + '/' + projectHandle,
             files: []
         }
         // Save project configuration
@@ -340,10 +365,14 @@ export default class ConnectorProject extends ConnectorBase
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
         // Update file tree to current files
-        answer = await this.updateFileTree( project );
+        var project = answer.data;  
+        answer = await this.updateFileTree( project, projectHandle );
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
-        return this.replySuccess(this.newAnswer(project), message, editor);
+        // Set as opened project
+        this.projects[ projectHandle ] = project;
+        // Returns the project
+        return this.replySuccess(this.newAnswer( project ), message, editor);
     }
     async command_saveProject( parameters, message, editor )
     {
@@ -387,9 +416,10 @@ export default class ConnectorProject extends ConnectorBase
         var newProject = answer.data;
         newProject.name = parameters.newName;
         newProject.handle = newProjectHandle;
-        newProject.url = this.serverUrl + '/projects/' + this.userName + '/' + this.token + '/' + newProjectHandle;
+        newProject.url = this.projectsUrl + '/' + this.userName + '/' + this.token + '/' + newProjectHandle;
+        newProject.runUrl = this.runUrl + '/' + this.userName + '/' + this.token + '/' + newProjectHandle;
         newProject.files = [];
-        answer = await this.updateFileTree( newProject );
+        answer = await this.updateFileTree( newProject, newProjectHandle );
         if ( answer.isError() )
             return this.replyError(answer, message, editor);
         answer = await this.awi.files.saveJSON( newProjectPath + '/project.json', newProject );
