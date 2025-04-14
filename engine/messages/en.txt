@@ -34,7 +34,11 @@ awi:is-variable-object                  ~{name}~ is a variable containing an obj
 awi:message-not-found                   Message not found (~{id}~)
 awi:user-not-found                      User ~{userName}~ not found.
 awi:user-not-connected                  No user connected.
-awi:file-not-found                      File not found (~{path}~)
+awi:file-not-found                      File not found (~{value}~)
+awi:cannot-save-file                    Cannot save file (~{value}~)
+awi:cannot-rename-file                  Cannot rename file (~{value}~)
+awi:cannot-delete-file                  Cannot delete file (~{value}~)
+awi:cannot-create-file                  Cannot create file (~{value}~)
 awi:user-changed                        User changed to ~{userName}~...
 awi:debug-set                           Debug level set to ~{result}~
 awi:verbose-set                         Verbose level set to ~{result}~
@@ -49,17 +53,13 @@ awi:code-wrapper-javascript             try{ ~{code}~ }<BR>catch( e ){ root.onEr
 awi:chat-answer                         ~{value}~
 awi:nothing-to-chat                     Nothing to chat...  
 
-awi:language-changed                    Programming language changed to ~{mode}~
-awi:language-not-found                  Programming language ~{mode}~ not found
 awi:socket-command-not-found            Command ~{command}~ not found
 awi:socket-error-processing-command     Error processing command ~{command}~
 awi:project-exists                      Project ~{value}~ already exists
-awi:project-created                     Project ~{value}~ created successfully
-awi:to-print                            Default to print: ~{value}~
 awi:template-not-found                  Template ~{value}~ not found
 awi:socket-new-connection               New connection from ~{name}~
 awi:socket-user-disconnected            User ~{name}~ disconnected
-awi:project-not-found                   Project ~{value}~ not found
+awi:project-not-open                    Project ~{value}~ not open
 awi:error-when-creating-user            Error when creating user ~{value}~
 awi:illegal-value                       Illegal parameter ~{value}~
 awi:account-already-exist               Account ~{value}~ already exists.
