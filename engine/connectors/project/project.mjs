@@ -457,8 +457,8 @@ export default class ConnectorProject extends ConnectorBase
         var project = this.projects[ parameters.handle ];
         if ( !this.findFile( project, parameters.path ) )
         {
-            var content = '';
-            var path = this.projectsPath + '/' + this.userName + '/' + this.token + '/' + parameters.handle + '/' + parameters.path;
+            var content = parameters.content || '';
+            var path = this.projects[ parameters.handle ].path + '/' + parameters.path;
             var answer = await this.awi.system.writeFile( path, content, { encoding: 'utf8' } );
             if ( answer.isError() )
                 return this.replyError(answer, message, editor );
@@ -466,7 +466,7 @@ export default class ConnectorProject extends ConnectorBase
             if ( answer.isError() )
                 return this.replyError(answer, message, editor );
             var file = this.findFile( project, parameters.path );
-            return this.replySuccess(this.newAnswer( { file: file, data: content } ), message, editor);
+            return this.replySuccess(this.newAnswer( file ), message, editor);
         }
         return this.replyError(this.newError( 'awi:file-exists', parameters.path ), message, editor);
     }
@@ -488,8 +488,8 @@ export default class ConnectorProject extends ConnectorBase
             response.content = answer.data;
             return this.replySuccess(this.newAnswer(response), message, editor);
         }
-        return this.replyError(this.newError( 'awi:file-not-found', parameters.path ), message, editor );
-}
+        return this.replyError(this.newError( 'awi:file-not-found', parameters.path ), message, editor);
+    }
     async command_saveFile( parameters, message, editor )
     {
         // Project exists?
@@ -509,7 +509,7 @@ export default class ConnectorProject extends ConnectorBase
                 return this.replyError(answer, message, editor);
             return this.replySuccess(this.newAnswer( file ), message, editor);
         }
-        return this.replyError(this.newError( 'awi:cannot-save-file', parameters.path ), message, editor);
+        return this.command_newFile( parameters, message, editor );
     }
     async command_renameFile( parameters, message, editor )
     {
